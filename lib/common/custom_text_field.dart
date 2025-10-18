@@ -9,21 +9,23 @@ class CustomTextField extends StatelessWidget {
       {super.key,
       this.keyboardType,
       this.controller,
-      required this.onEditingComplete,
+      // required this.onEditingComplete,
       this.obscureText,
       this.suffixIcon,
       this.validator,
       this.prefixIcon,
-      this.hintText});
+      this.hintText,
+      this.maxLines});
 
   final TextInputType? keyboardType;
   final TextEditingController? controller;
-  final void Function() onEditingComplete;
+  // final void Function() onEditingComplete;
   final bool? obscureText;
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
   final Widget? prefixIcon;
   final String? hintText;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +37,11 @@ class CustomTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(9.r),
         ),
         child: TextFormField(
+          maxLines: maxLines ?? 1,
           controller: controller,
           keyboardType: keyboardType,
           obscureText: obscureText ?? false,
-          onEditingComplete: onEditingComplete,
+          // onEditingComplete: onEditingComplete,
           cursorHeight: 20.h,
           style: appStyle(11, kDark, FontWeight.normal),
           validator: validator,

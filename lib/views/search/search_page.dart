@@ -38,16 +38,16 @@ class _SearchPageState extends State<SearchPage> {
                 controller: _searchController,
                 keyboardType: TextInputType.text,
                 hintText: "Search For Appliances",
-                onEditingComplete: () {
-                  if (controller.isTriggered == false) {
-                    controller.searchFoods(_searchController.text);
-                    controller.setTrigger = true;
-                  } else {
-                    controller.searchResults = null;
-                    controller.setTrigger = false;
-                    _searchController.clear();
-                  }
-                },
+                // onEditingComplete: () {
+                //   if (controller.isTriggered == false) {
+                //     controller.searchFoods(_searchController.text);
+                //     controller.setTrigger = true;
+                //   } else {
+                //     controller.searchResults = null;
+                //     controller.setTrigger = false;
+                //     _searchController.clear();
+                //   }
+                // },
                 suffixIcon: GestureDetector(
                     onTap: () {
                       if (controller.isTriggered == false) {

@@ -1,4 +1,5 @@
 import 'package:appliances_flutter/models/appliances_model.dart';
+import 'package:appliances_flutter/views/appliances/appliances_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -6,6 +7,8 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/constants/constants.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 
 class AppliancesTitle extends StatelessWidget {
   const AppliancesTitle({super.key, required this.appliances, this.color});
@@ -15,7 +18,9 @@ class AppliancesTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Get.to(() => AppliancesPage(appliances: appliances));
+      },
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [

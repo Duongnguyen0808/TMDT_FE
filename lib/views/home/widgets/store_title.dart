@@ -1,10 +1,15 @@
+// ignore_for_file: unnecessary_import
+
+import 'package:appliances_flutter/views/store/store_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/models/store_model.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 
 class StoreTitle extends StatelessWidget {
   StoreTitle({super.key, required this.store});
@@ -13,7 +18,9 @@ class StoreTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Get.to(() => StorePage(store: store));
+      },
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [

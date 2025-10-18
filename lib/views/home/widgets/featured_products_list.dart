@@ -1,3 +1,6 @@
+// ignore_for_file: unnecessary_import
+
+import 'package:appliances_flutter/views/store/store_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -5,6 +8,8 @@ import 'package:appliances_flutter/common/shimmers/nearby_shimmer.dart';
 import 'package:appliances_flutter/hooks/fetch_store.dart';
 import 'package:appliances_flutter/models/store_model.dart';
 import 'package:appliances_flutter/views/home/widgets/store_widget.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 
 class FeaturedProductsList extends HookWidget {
   const FeaturedProductsList({super.key});
@@ -25,6 +30,9 @@ class FeaturedProductsList extends HookWidget {
               children: List.generate(stores!.length, (i) {
                 StoreModel store = stores[i];
                 return StoreWidget(
+                    onTap: () {
+                      Get.to(() => StorePage(store: store));
+                    },
                     image: store.imageUrl,
                     logo: store.logoUrl,
                     title: store.title,

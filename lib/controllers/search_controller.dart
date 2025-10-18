@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_final_fields
+// ignore_for_file: prefer_final_fields, unused_local_variable
 
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/models/api_error.dart';

@@ -22,3 +22,10 @@ double width = 375.w;
 
 const String appBaseUrl = "http://10.0.2.2:6013";
 // const String appBaseUrl = "http://192.168.1.5:6013"; // Device thật
+
+final List<String> verificationReasons = [
+  'Real-time verification of your phone number',
+  'Ensure secure transactions',
+  'Receive order updates and notifications',
+  'Quick customer support access',
+];
