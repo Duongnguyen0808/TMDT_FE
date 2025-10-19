@@ -36,6 +36,7 @@ class _AppliancesPageState extends State<AppliancesPage> {
   Widget build(BuildContext context) {
     final hookResult = useFetchStores(widget.appliances.store);
     final controller = Get.put(AppliancesController());
+    controller.loadAdditives(widget.appliances.additives);
     return Scaffold(
       body: ListView(
         padding: EdgeInsets.zero,
@@ -126,7 +127,7 @@ class _AppliancesPageState extends State<AppliancesPage> {
                       Obx(
                         () => ReusableText(
                             text:
-                                "\$ ${widget.appliances.price * controller.count.value} ",
+                                "\$ ${((widget.appliances.price + controller.additivePrice) * controller.count.value)} ",
                             style: appStyle(18, kDark, FontWeight.w600)),
                       ),
                     ],
@@ -169,34 +170,40 @@ class _AppliancesPageState extends State<AppliancesPage> {
                   SizedBox(
                     height: 10.h,
                   ),
-                  Column(
-                    children: List.generate(widget.appliances.additives.length,
-                        (index) {
-                      final additive = widget.appliances.additives[index];
-                      return CheckboxListTile(
-                          contentPadding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
-                          dense: true,
-                          value: true,
-                          tristate: false,
-                          activeColor: kSecondary,
-                          title: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              ReusableText(
-                                  text: additive.title,
-                                  style: appStyle(12, kDark, FontWeight.w400)),
-                              SizedBox(
-                                width: 5.w,
-                              ),
-                              ReusableText(
-                                  text: "\$ ${additive.price}",
-                                  style:
-                                      appStyle(12, kPrimary, FontWeight.w600)),
-                            ],
-                          ),
-                          onChanged: (bool? value) {});
-                    }),
+                  Obx(
+                    () => Column(
+                      children: List.generate(controller.additivesList.length,
+                          (index) {
+                        final additive = controller.additivesList[index];
+                        return CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                            dense: true,
+                            tristate: false,
+                            activeColor: kSecondary,
+                            value: additive.isChecked.value,
+                            title: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                ReusableText(
+                                    text: additive.title,
+                                    style:
+                                        appStyle(12, kDark, FontWeight.w400)),
+                                SizedBox(
+                                  width: 5.w,
+                                ),
+                                ReusableText(
+                                    text: "\$ ${additive.price}",
+                                    style: appStyle(
+                                        12, kPrimary, FontWeight.w600)),
+                              ],
+                            ),
+                            onChanged: (bool? value) {
+                              additive.toggleChecked();
+                              controller.getTotalPrice();
+                            });
+                      }),
+                    ),
                   ),
                   SizedBox(
                     height: 20.h,
@@ -241,7 +248,7 @@ class _AppliancesPageState extends State<AppliancesPage> {
                     height: 20.h,
                   ),
                   ReusableText(
-                      text: "Prefences",
+                      text: "Ghi chú",
                       style: appStyle(18, kDark, FontWeight.bold)),
                   SizedBox(
                     height: 5.h,
@@ -250,7 +257,7 @@ class _AppliancesPageState extends State<AppliancesPage> {
                     height: 65.h,
                     child: CustomTextField(
                       controller: _preferences,
-                      hintText: " Add a note with your prefernces",
+                      hintText: "Thêm ghi chú cho đơn hàng",
                       maxLines: 3,
                     ),
                   ),
@@ -320,7 +327,7 @@ class _AppliancesPageState extends State<AppliancesPage> {
                     height: 10,
                   ),
                   ReusableText(
-                      text: "Verify Your Phone Number",
+                      text: "Xác thực số điện thoại",
                       style: appStyle(18, kPrimary, FontWeight.w600)),
                   SizedBox(
                     height: 250.h,
@@ -343,7 +350,7 @@ class _AppliancesPageState extends State<AppliancesPage> {
                     height: 10.h,
                   ),
                   CustomButton(
-                    text: "Verify Phone Number",
+                    text: "Xác thực số điện thoại",
                     btnHeight: 35.h,
                     onTap: () {
                       Get.to(() => const PhoneVerificationPage());
