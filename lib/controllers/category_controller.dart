@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_final_fields
+
 import 'package:get/get_rx/get_rx.dart';
 import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 

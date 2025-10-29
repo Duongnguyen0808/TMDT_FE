@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 String googleApiKey = '';
@@ -24,8 +23,8 @@ const String appBaseUrl = "http://10.0.2.2:6013";
 // const String appBaseUrl = "http://192.168.1.5:6013"; // Device thật
 
 final List<String> verificationReasons = [
-  'Real-time verification of your phone number',
-  'Ensure secure transactions',
-  'Receive order updates and notifications',
-  'Quick customer support access',
+  'Cập nhật theo thời gian thực: Nhận thông báo ngay lập tức về trạng thái đơn hàng của bạn.',
+  'Giao tiếp trực tiếp: Số điện thoại đã được xác minh đảm bảo giao tiếp liền mạch.',
+  'Bảo mật nâng cao: Bảo vệ tài khoản của bạn và xác nhận đơn hàng một cách an toàn.',
+  'Ưu đãi độc quyền: Cập nhật thông tin về các ưu đãi và chương trình khuyến mãi đặc biệt.'
 ];

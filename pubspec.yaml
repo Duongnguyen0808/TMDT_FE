@@ -43,6 +43,7 @@ dependencies:
   firebase_auth: ^6.0.2
   country_picker: ^2.0.23
   phone_otp_verification: ^1.0.3
+  flutter_otp_text_field: ^1.5.1+1
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,5 @@
 {
   "cSpell.words": ["Customa", "Futurne", "Restauarant"],
-  "cmake.sourceDirectory": "C:/Users/duong/Hoc/TMDT/tmdt/linux"
+  "cmake.sourceDirectory": "C:/Users/duong/Hoc/TMDT/tmdt/linux",
+  "cmake.ignoreCMakeListsMissing": true
 }

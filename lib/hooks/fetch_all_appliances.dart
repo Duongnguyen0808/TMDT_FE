@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/models/api_error.dart';
 import 'package:appliances_flutter/models/appliances_model.dart';

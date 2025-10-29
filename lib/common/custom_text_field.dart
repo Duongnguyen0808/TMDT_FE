@@ -1,7 +1,6 @@
 import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CustomTextField extends StatelessWidget {

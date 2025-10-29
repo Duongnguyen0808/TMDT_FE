@@ -1,3 +1,5 @@
+// ignore_for_file: file_names
+
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/models/api_error.dart';

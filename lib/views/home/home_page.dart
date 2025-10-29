@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:appliances_flutter/common/custom_container.dart';
 import 'package:appliances_flutter/common/customa_appbar.dart';
 import 'package:appliances_flutter/common/heading.dart';
