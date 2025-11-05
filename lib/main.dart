@@ -9,9 +9,7 @@ import 'package:get/get_navigation/src/root/get_material_app.dart';
 Widget defaultHome = MainScreen();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -29,9 +27,10 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'Futurne App',
           theme: ThemeData(
-              scaffoldBackgroundColor: kOffWhite,
-              iconTheme: const IconThemeData(color: kDark),
-              primarySwatch: Colors.grey),
+            scaffoldBackgroundColor: kOffWhite,
+            iconTheme: const IconThemeData(color: kDark),
+            primarySwatch: Colors.grey,
+          ),
           home: defaultHome,
         );
       },

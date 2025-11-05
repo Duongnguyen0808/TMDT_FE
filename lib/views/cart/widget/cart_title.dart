@@ -2,9 +2,7 @@ import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/controllers/cart_controller.dart';
-import 'package:appliances_flutter/models/appliances_model.dart';
-import 'package:appliances_flutter/models/cart_request.dart';
-import 'package:appliances_flutter/views/appliances/appliances_page.dart';
+import 'package:appliances_flutter/models/cart_response.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -12,18 +10,19 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 
 import 'package:get/get.dart';
 
-class AppliancesTitle extends StatelessWidget {
-  AppliancesTitle({super.key, required this.appliances, this.color});
+class CartTile extends StatelessWidget {
+  CartTile({super.key, required this.cart, this.color, this.refetch});
 
-  final AppliancesModel appliances;
+  final CartResponse cart;
   final Color? color;
+  final Function()? refetch;
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(CartController());
     return GestureDetector(
         onTap: () {
-          Get.to(() => AppliancesPage(appliances: appliances));
+          // Get.to(() => FoodPage(food: food));
         },
         child: Stack(
           clipBehavior: Clip.hardEdge,
@@ -48,7 +47,7 @@ class AppliancesTitle extends StatelessWidget {
                             width: 70.w,
                             height: 70.h,
                             child: Image.network(
-                              appliances.imageUrl[0],
+                              cart.productId.imageUrl[0],
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -79,21 +78,21 @@ class AppliancesTitle extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ReusableText(
-                          text: appliances.title,
+                          text: cart.productId.title,
                           style: appStyle(11, kDark, FontWeight.w400),
                         ),
-                        ReusableText(
-                          text: "Delivery time: ${appliances.time}",
-                          style: appStyle(11, kGray, FontWeight.w400),
-                        ),
+                        // ReusableText(
+                        //   text: "Delivery time: ${cart.productId.t}",
+                        //   style: appStyle(11, kGray, FontWeight.w400),
+                        // ),
                         SizedBox(
                           width: width * 0.7,
                           height: 15.h,
                           child: ListView.builder(
                               scrollDirection: Axis.horizontal,
-                              itemCount: appliances.additives.length,
+                              itemCount: cart.additives.length,
                               itemBuilder: (context, i) {
-                                Additive additive = appliances.additives[i];
+                                var additive = cart.additives[i];
                                 return Container(
                                   margin: EdgeInsets.only(right: 5.w),
                                   decoration: BoxDecoration(
@@ -106,7 +105,7 @@ class AppliancesTitle extends StatelessWidget {
                                     child: Padding(
                                       padding: EdgeInsets.all(2.h),
                                       child: ReusableText(
-                                          text: additive.title,
+                                          text: additive,
                                           style: appStyle(
                                               8, kGray, FontWeight.w400)),
                                     ),
@@ -130,7 +129,7 @@ class AppliancesTitle extends StatelessWidget {
                     color: kPrimary, borderRadius: BorderRadius.circular(10.r)),
                 child: Center(
                   child: ReusableText(
-                      text: "\$ ${appliances.price.toStringAsFixed(2)}",
+                      text: "\$ ${cart.totalPrice.toStringAsFixed(2)}",
                       style: appStyle(12, kLightWhite, FontWeight.bold)),
                 ),
               ),
@@ -140,24 +139,16 @@ class AppliancesTitle extends StatelessWidget {
               top: 6.h,
               child: GestureDetector(
                 onTap: () {
-                  var data = CartRequest(
-                      productId: appliances.id,
-                      additives: [],
-                      quantity: 1,
-                      totalPrice: appliances.price);
-
-                  String cart = cartRequestToJson(data);
-                  controller.addToCart(cart);
+                  controller.removeFrom(cart.id, refetch!);
                 },
                 child: Container(
                   width: 19.w,
                   height: 19.h,
                   decoration: BoxDecoration(
-                      color: kSecondary,
-                      borderRadius: BorderRadius.circular(10.r)),
+                      color: kRed, borderRadius: BorderRadius.circular(10.r)),
                   child: Center(
                     child: Icon(
-                      MaterialCommunityIcons.cart_plus,
+                      MaterialCommunityIcons.trash_can,
                       size: 15.h,
                       color: kLightWhite,
                     ),

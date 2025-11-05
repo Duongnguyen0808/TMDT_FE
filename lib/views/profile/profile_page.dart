@@ -6,6 +6,8 @@ import 'package:appliances_flutter/controllers/login_controller.dart';
 import 'package:appliances_flutter/models/login_response.dart';
 import 'package:appliances_flutter/views/auth/login_redirect.dart';
 import 'package:appliances_flutter/views/auth/verification_page.dart';
+import 'package:appliances_flutter/views/profile/addresses_page.dart';
+
 import 'package:appliances_flutter/views/profile/widget/profile_title_widget.dart';
 import 'package:appliances_flutter/views/profile/widget/user_info_widget.dart';
 import 'package:flutter/material.dart';
@@ -60,9 +62,11 @@ class ProfilePage extends StatelessWidget {
                 children: [
                   ProfileTileWidget(
                       onTap: () {
-                        Get.to(() => LoginRedirect());
+                        Get.to(() => const UserOrders(),
+                            transition: Transition.cupertino,
+                            duration: const Duration(milliseconds: 900));
                       },
-                      title: "Giỏ hàng của tôi",
+                      title: "Đơn hàng của tôi",
                       icon: Icons.shopping_cart),
                   ProfileTileWidget(
                     onTap: () {},
@@ -91,7 +95,9 @@ class ProfilePage extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
                   ProfileTileWidget(
-                      onTap: () {},
+                      onTap: () {
+                        Get.to(() => const Addresses());
+                      },
                       title: "Địa chỉ giao hàng",
                       icon: SimpleLineIcons.location_pin),
                   ProfileTileWidget(

@@ -20,7 +20,13 @@ double height = 825.h;
 double width = 375.w;
 
 const String appBaseUrl = "http://10.0.2.2:6013";
-// const String appBaseUrl = "http://192.168.1.5:6013"; // Device thật
+// const String appBaseUrl = "http://192.168.1.5:6013";
+
+// Base URL for API calls
+const String kBaseUrl = "http://10.0.2.2:3000";
+
+// MapBox API Key (you need to replace this with your actual MapBox API key)
+const String kMapBoxApiKey = "pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjbGV4YW1wbGUifQ.example_token_here";
 
 final List<String> verificationReasons = [
   'Cập nhật theo thời gian thực: Nhận thông báo ngay lập tức về trạng thái đơn hàng của bạn.',

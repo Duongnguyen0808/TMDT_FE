@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- VietMap & Geolocator: Quyền truy cập vị trí -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần truy cập vị trí để hiển thị bản đồ và địa chỉ giao hàng.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Ứng dụng dùng vị trí để đề xuất, hiển thị và theo dõi địa chỉ giao hàng.</string>
 </dict>
 </plist>

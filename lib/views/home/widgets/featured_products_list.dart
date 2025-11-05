@@ -27,8 +27,8 @@ class FeaturedProductsList extends HookWidget {
             padding: EdgeInsets.only(left: 12.w, top: 10.h),
             child: ListView(
               scrollDirection: Axis.horizontal,
-              children: List.generate(stores!.length, (i) {
-                StoreModel store = stores[i];
+              children: List.generate(stores?.length ?? 0, (i) {
+                StoreModel store = stores![i];
                 return StoreWidget(
                     onTap: () {
                       Get.to(() => StorePage(store: store));

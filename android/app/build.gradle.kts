@@ -10,14 +10,14 @@ plugins {
 
 android {
     namespace = "com.example.tmdt"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
+    
 
-    // ✅ Cú pháp đúng trong KTS
     ndkVersion = "27.0.12077973"
 
     defaultConfig {
         applicationId = "com.example.tmdt"
-        minSdk = flutter.minSdkVersion
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

@@ -25,7 +25,7 @@ FetchHook useFetchCategories() {
         appiError.value = apiErrorFromJson(response.body);
       }
     } catch (e) {
-      error.value = e as Exception;
+      error.value = e is Exception ? e : Exception(e.toString());
     } finally {
       isLoading.value = false;
     }

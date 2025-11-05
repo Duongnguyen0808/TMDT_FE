@@ -1,4 +1,5 @@
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'dart:convert';
 
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/models/api_error.dart';
@@ -24,7 +25,7 @@ FetchHook useFetchStore(String code) {
         appiError.value = apiErrorFromJson(response.body);
       }
     } catch (e) {
-      error.value = e as Exception;
+      error.value = e is Exception ? e : Exception(e.toString());
     } finally {
       isLoading.value = false;
     }
@@ -42,6 +43,49 @@ FetchHook useFetchStore(String code) {
 
   return FetchHook(
     data: stores.value,
+    isLoading: isLoading.value,
+    error: error.value,
+    refetch: refetch,
+  );
+}
+
+// Fetch a single store by its id
+FetchHook useFetchStoreById(String id) {
+  final store = useState<StoreModel?>(null);
+  final isLoading = useState<bool>(false);
+  final error = useState<Exception?>(null);
+  final appiError = useState<ApiError?>(null);
+
+  Future<void> fetchData() async {
+    isLoading.value = true;
+    try {
+      final url = Uri.parse('$appBaseUrl/api/store/byId/$id');
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        store.value = StoreModel.fromJson(data);
+      } else {
+        appiError.value = apiErrorFromJson(response.body);
+      }
+    } catch (e) {
+      error.value = e is Exception ? e : Exception(e.toString());
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  useEffect(() {
+    fetchData();
+    return null;
+  }, []);
+
+  void refetch() {
+    isLoading.value = true;
+    fetchData();
+  }
+
+  return FetchHook(
+    data: store.value,
     isLoading: isLoading.value,
     error: error.value,
     refetch: refetch,

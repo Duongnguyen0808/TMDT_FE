@@ -40,7 +40,8 @@ class _StorePageState extends State<StorePage> with TickerProviderStateMixin {
                   height: 230.h,
                   width: width,
                   child: CachedNetworkImage(
-                      fit: BoxFit.cover, imageUrl: widget.store!.imageUrl),
+                      fit: BoxFit.cover,
+                      imageUrl: widget.store?.imageUrl ?? ""),
                 ),
                 Positioned(
                     bottom: 0, child: StoreBottomBar(store: widget.store)),

@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, unnecessary_import, unused_local_variable, prefer_interpolation_to_compose_strings, prefer_const_literals_to_create_immutables, unrelated_type_equality_checks, non_constant_identifier_names
+// ignore_for_file: unused_local_variable
 
 import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/custom_text_field.dart';
@@ -6,12 +6,21 @@ import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/common/shimmers/custom_button.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/controllers/appliances_controller.dart';
+import 'package:appliances_flutter/controllers/cart_controller.dart';
 import 'package:appliances_flutter/controllers/login_controller.dart';
-import 'package:appliances_flutter/hooks/fetch_stores.dart';
+import 'package:appliances_flutter/hooks/fetch_default.dart';
+import 'package:appliances_flutter/hooks/fetch_store.dart';
+import 'package:appliances_flutter/models/address_response.dart';
 import 'package:appliances_flutter/models/appliances_model.dart';
+import 'package:appliances_flutter/models/cart_request.dart';
 import 'package:appliances_flutter/models/login_response.dart';
+import 'package:appliances_flutter/models/store_model.dart';
 import 'package:appliances_flutter/views/auth/login_page.dart';
 import 'package:appliances_flutter/views/auth/phone_verification_page.dart';
+import 'package:appliances_flutter/views/auth/login_redirect.dart';
+import 'package:appliances_flutter/models/order_model.dart' as order_model;
+import 'package:appliances_flutter/views/orders/order_page.dart';
+import 'package:appliances_flutter/views/profile/shipping_address.dart';
 import 'package:appliances_flutter/views/store/store_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -29,50 +38,98 @@ class AppliancesPage extends StatefulHookWidget {
   State<AppliancesPage> createState() => _AppliancesPageState();
 }
 
-class _AppliancesPageState extends State<AppliancesPage> {
+class _AppliancesPageState extends State<AppliancesPage>
+    with WidgetsBindingObserver {
   final TextEditingController _preferences = TextEditingController();
   final PageController _pageController = PageController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Refetch default address when app resumes
+      setState(() {});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final cartController = Get.put(CartController());
     LoginResponse? user;
-    final hookResult = useFetchStores(widget.appliances.store);
+    // Fetch the store by id to get a single StoreModel
+    final data = useFetchDefault();
+    AddressResponse? address = data.data;
+    final hookResult = useFetchStoreById(widget.appliances.store);
+    StoreModel? store = hookResult.data;
     final controller = Get.put(AppliancesController());
     final loginController = Get.put(LoginController());
 
     user = loginController.getUserInfo();
     controller.loadAdditives(widget.appliances.additives);
 
+    // Nếu chưa đăng nhập, chuyển sang màn hình LoginRedirect thay vì yêu cầu địa chỉ
+    if (user == null) {
+      return const LoginRedirect();
+    }
+
+    // Show loading while fetching address
+    if (data.isLoading) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: kPrimary),
+        ),
+      );
+    }
+
+    // Only show ShippingAddress if no default address exists
+    if (address == null) {
+      return Scaffold(
+        body: ShippingAddress(
+          onAddressSet: () {
+            // Refetch default address when returning from address page
+            data.refetch!();
+          },
+        ),
+      );
+    }
+
     return Scaffold(
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.only(
-              bottomRight: Radius.circular(30.r),
-            ),
+            borderRadius: BorderRadius.only(bottomRight: Radius.circular(30.r)),
             child: Stack(
               children: [
                 SizedBox(
                   height: 230.h,
                   child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (i) {
-                      controller.changePage(i);
-                    },
-                    itemCount: widget.appliances.imageUrl.length,
-                    itemBuilder: (context, i) {
-                      return Container(
-                        width: width,
-                        height: 230.h,
-                        color: kLightWhite,
-                        child: CachedNetworkImage(
-                          imageUrl: widget.appliances.imageUrl[i],
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    },
-                  ),
+                      controller: _pageController,
+                      onPageChanged: (i) {
+                        controller.changePage(i);
+                      },
+                      itemCount: widget.appliances.imageUrl.length,
+                      itemBuilder: (context, i) {
+                        return Container(
+                          width: width,
+                          height: 230.h,
+                          color: kLightWhite,
+                          child: CachedNetworkImage(
+                              fit: BoxFit.cover,
+                              imageUrl: widget.appliances.imageUrl[i]),
+                        );
+                      }),
                 ),
                 Positioned(
                   bottom: 10,
@@ -82,21 +139,18 @@ class _AppliancesPageState extends State<AppliancesPage> {
                       () => Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
-                          widget.appliances.imageUrl.length,
-                          (index) {
-                            return Container(
-                              margin: EdgeInsets.all(4.h),
-                              height: 10.h,
-                              width: 10.w,
-                              decoration: BoxDecoration(
+                            widget.appliances.imageUrl.length, (index) {
+                          return Container(
+                            margin: EdgeInsets.all(4.h),
+                            width: 10.w,
+                            height: 10.h,
+                            decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: controller.currentPage == index
                                     ? kSecondary
-                                    : kGrayLight,
-                              ),
-                            );
-                          },
-                        ),
+                                    : kGrayLight),
+                          );
+                        }),
                       ),
                     ),
                   ),
@@ -108,8 +162,11 @@ class _AppliancesPageState extends State<AppliancesPage> {
                     onTap: () {
                       Get.back();
                     },
-                    child: Icon(Icons.arrow_back_ios_new,
-                        color: kPrimary, size: 30),
+                    child: const Icon(
+                      Ionicons.chevron_back_circle,
+                      color: kPrimary,
+                      size: 30,
+                    ),
                   ),
                 ),
                 Positioned(
@@ -118,11 +175,11 @@ class _AppliancesPageState extends State<AppliancesPage> {
                   child: CustomButton(
                     onTap: () {
                       Get.to(() => StorePage(
-                            store: hookResult.data,
+                            store: store,
                           ));
                     },
                     btnWidth: 120.w,
-                    text: "Mở cửa hàng",
+                    text: "Open Store",
                   ),
                 ),
               ],
@@ -133,184 +190,256 @@ class _AppliancesPageState extends State<AppliancesPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 10.h),
+                SizedBox(
+                  height: 10.h,
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ReusableText(
-                      text: widget.appliances.title,
-                      style: appStyle(18, kDark, FontWeight.w600),
-                    ),
+                        text: widget.appliances.title,
+                        style: appStyle(18, kDark, FontWeight.w600)),
                     Obx(
                       () => ReusableText(
-                        text:
-                            "\$ ${((widget.appliances.price + controller.additivePrice) * controller.count.value)} ",
-                        style: appStyle(18, kDark, FontWeight.w600),
-                      ),
-                    ),
+                          text:
+                              "\$ ${((widget.appliances.price + controller.additivePrice) * controller.count.value)}",
+                          style: appStyle(18, kPrimary, FontWeight.w600)),
+                    )
                   ],
                 ),
-                SizedBox(height: 5.h),
+                SizedBox(
+                  height: 5.h,
+                ),
                 Text(
                   widget.appliances.description,
+                  textAlign: TextAlign.justify,
                   maxLines: 8,
-                  style: appStyle(14, kGray, FontWeight.w400),
+                  style: appStyle(11, kGray, FontWeight.w400),
+                ),
+                SizedBox(
+                  height: 5.h,
                 ),
                 SizedBox(
                   height: 18.h,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: List.generate(
-                      widget.appliances.appliancesTags.length,
-                      (index) {
-                        final tag = widget.appliances.appliancesTags[index];
-                        return Container(
-                          margin: EdgeInsets.only(right: 6.w),
-                          decoration: BoxDecoration(
+                        widget.appliances.appliancesTags.length, (index) {
+                      final tag = widget.appliances.appliancesTags[index];
+                      return Container(
+                        margin: EdgeInsets.only(right: 5.w),
+                        decoration: BoxDecoration(
                             color: kPrimary,
-                            borderRadius: BorderRadius.circular(15.r),
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(15.r))),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 6.w),
+                          child: ReusableText(
+                            text: tag,
+                            style: appStyle(11, kWhite, FontWeight.w400),
                           ),
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 6.w),
-                            child: ReusableText(
-                              text: tag,
-                              style: appStyle(11, kWhite, FontWeight.w400),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    }),
                   ),
                 ),
-                SizedBox(height: 15.h),
-                ReusableText(
-                  text: "Thông tin cửa hàng",
-                  style: appStyle(18, kDark, FontWeight.w600),
+                SizedBox(
+                  height: 15.h,
                 ),
-                SizedBox(height: 10.h),
+                ReusableText(
+                    text: "Additives and Toppings",
+                    style: appStyle(18, kDark, FontWeight.w600)),
+                SizedBox(
+                  height: 10.h,
+                ),
                 Obx(
                   () => Column(
                     children:
                         List.generate(controller.additivesList.length, (index) {
                       final additive = controller.additivesList[index];
                       return CheckboxListTile(
-                        contentPadding: EdgeInsets.zero,
-                        visualDensity: VisualDensity.compact,
-                        dense: true,
-                        tristate: false,
-                        activeColor: kSecondary,
-                        value: additive.isChecked.value,
-                        title: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            ReusableText(
-                              text: additive.title,
-                              style: appStyle(12, kDark, FontWeight.w400),
-                            ),
-                            SizedBox(width: 5.w),
-                            ReusableText(
-                              text: "\$ ${additive.price}",
-                              style: appStyle(12, kPrimary, FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                        onChanged: (bool? value) {
-                          additive.toggleChecked();
-                          controller.getTotalPrice();
-                        },
-                      );
+                          contentPadding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          dense: true,
+                          activeColor: kSecondary,
+                          value: additive.isChecked.value,
+                          tristate: false,
+                          title: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              ReusableText(
+                                  text: additive.title,
+                                  style: appStyle(11, kDark, FontWeight.w400)),
+                              SizedBox(
+                                width: 5.w,
+                              ),
+                              ReusableText(
+                                  text: "\$ ${additive.price}",
+                                  style:
+                                      appStyle(11, kPrimary, FontWeight.w600)),
+                            ],
+                          ),
+                          onChanged: (bool? value) {
+                            additive.toggleChecked();
+                            controller.getTotalPrice();
+                            controller.getCartAdditive();
+                          });
                     }),
                   ),
                 ),
-                SizedBox(height: 20.h),
+                SizedBox(
+                  height: 20.h,
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ReusableText(
-                      text: "Số lượng",
-                      style: appStyle(12, kDark, FontWeight.bold),
+                        text: "Qauntity",
+                        style: appStyle(18, kDark, FontWeight.bold)),
+                    SizedBox(
+                      width: 5.w,
                     ),
-                    SizedBox(width: 5.w),
                     Row(
                       children: [
                         GestureDetector(
                           onTap: () {
                             controller.increment();
                           },
-                          child: Icon(AntDesign.pluscircleo),
+                          child: const Icon(AntDesign.pluscircleo),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Obx(
-                            () => ReusableText(
-                              text: "${controller.count.value}",
-                              style: appStyle(14, kDark, FontWeight.w600),
-                            ),
-                          ),
-                        ),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Obx(
+                              () => ReusableText(
+                                  text: "${controller.count.value}",
+                                  style: appStyle(14, kDark, FontWeight.w600)),
+                            )),
                         GestureDetector(
                           onTap: () {
                             controller.decrement();
                           },
-                          child: Icon(AntDesign.minuscircleo),
+                          child: const Icon(AntDesign.minuscircleo),
                         )
                       ],
                     ),
                   ],
                 ),
-                SizedBox(height: 20.h),
-                ReusableText(
-                  text: "Ghi chú",
-                  style: appStyle(18, kDark, FontWeight.bold),
+                SizedBox(
+                  height: 20.h,
                 ),
-                SizedBox(height: 5.h),
+                ReusableText(
+                  text: "Preferences",
+                  style: appStyle(18, kDark, FontWeight.w600),
+                ),
+                SizedBox(
+                  height: 5.h,
+                ),
                 SizedBox(
                   height: 65.h,
                   child: CustomTextField(
                     controller: _preferences,
-                    hintText: "Thêm ghi chú cho đơn hàng",
+                    hintText: "Add a note with your preferences",
                     maxLines: 3,
                   ),
                 ),
-                SizedBox(height: 15.h),
-                GestureDetector(
-                  onTap: () {
-                    if (user == null) {
-                      Get.to(() => const LoginPage());
-                    } else if (user.phoneVerification == false) {
-                      showVerificationSheet(context);
-                    } else {
-                      print("Thêm vào giỏ hàng");
-                    }
-                  },
-                  child: Container(
-                    height: 40.h,
-                    decoration: BoxDecoration(
+                SizedBox(
+                  height: 15.h,
+                ),
+                Container(
+                  height: 40.h,
+                  decoration: BoxDecoration(
                       color: kPrimary,
-                      borderRadius: BorderRadius.circular(30.r),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w),
-                          child: ReusableText(
-                            text: "Thêm vào giỏ hàng",
-                            style: appStyle(16, kWhite, FontWeight.w600),
+                      borderRadius: BorderRadius.circular(30.r)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                          child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          if (user == null) {
+                            Get.to(() => const LoginPage());
+                          } else if (user.phoneVerification == false) {
+                            showVerificationSheet(context);
+                          } else {
+                            double price = (widget.appliances.price +
+                                    controller.additivePrice) *
+                                controller.count.value;
+
+                            // Nếu store chưa tải xong, vẫn cho điều hướng.
+                            // OrderPage đã xử lý khi store null và hiển thị fallback.
+
+                            final order_model.OrderItem item =
+                                order_model.OrderItem(
+                                    appliancesId: order_model.AppliancesId(
+                                      id: widget.appliances.id,
+                                      title: widget.appliances.title,
+                                      rating: widget.appliances.rating,
+                                      imageUrl: widget.appliances.imageUrl,
+                                      time: widget.appliances.time,
+                                    ),
+                                    quantity: controller.count.value,
+                                    price: price,
+                                    additives: controller.getCartAdditive(),
+                                    instructions: _preferences.text,
+                                    id: "" // placeholder id; backend assigns real id on order
+                                    );
+
+                            Get.to(
+                              () => OrderPage(
+                                item: item,
+                                store: store,
+                                appliances: widget.appliances,
+                                address: address,
+                              ),
+                              transition: Transition.cupertino,
+                              duration: const Duration(milliseconds: 900),
+                            );
+                          }
+                        },
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12.w),
+                            child: ReusableText(
+                                text: "Place Order",
+                                style:
+                                    appStyle(18, kLightWhite, FontWeight.w600)),
                           ),
                         ),
-                        CircleAvatar(
-                          radius: 20.r,
+                      )),
+                      GestureDetector(
+                        onTap: () {
+                          double price = (widget.appliances.price +
+                                  controller.additivePrice) *
+                              controller.count.value;
+
+                          var data = CartRequest(
+                              productId: widget.appliances.id,
+                              additives: controller.getCartAdditive(),
+                              quantity: controller.count.value,
+                              totalPrice: price);
+
+                          String cart = cartRequestToJson(data);
+
+                          cartController.addToCart(cart);
+                        },
+                        child: CircleAvatar(
                           backgroundColor: kSecondary,
-                          child: Icon(Ionicons.cart, color: kLightWhite),
-                        )
-                      ],
-                    ),
+                          radius: 20.r,
+                          child: const Icon(
+                            Ionicons.cart,
+                            color: kLightWhite,
+                          ),
+                        ),
+                      )
+                    ],
                   ),
-                ),
+                )
               ],
             ),
-          ),
+          )
         ],
       ),
     );
