@@ -4,6 +4,7 @@ import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/models/api_error.dart';
 import 'package:appliances_flutter/models/login_response.dart';
 import 'package:appliances_flutter/views/entrypoint.dart';
+import 'package:appliances_flutter/views/auth/login_redirect.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 
@@ -28,6 +29,41 @@ class VerificationController extends GetxController {
 
   set setLoading(bool value) {
     _isLoading.value = value;
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    _checkUserStillExists();
+  }
+
+  Future<void> _checkUserStillExists() async {
+    String? accessToken = box.read("token");
+    if (accessToken == null) return;
+
+    Uri url = Uri.parse('$appBaseUrl/api/users');
+    Map<String, String> headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $accessToken'
+    };
+
+    try {
+      var response = await http.get(url, headers: headers);
+      // If user has been auto-deleted by TTL, backend now returns 404
+      if (response.statusCode == 404 || response.statusCode == 401) {
+        await box.erase();
+        Get.snackbar(
+          "Phiên xác minh đã hết hạn",
+          "Tài khoản đã bị xoá do không xác minh trong 10 phút",
+          colorText: kLightWhite,
+          backgroundColor: kRed,
+          icon: const Icon(Icons.error_outline),
+        );
+        Get.offAll(() => const LoginRedirect());
+      }
+    } catch (e) {
+      // silent fail – keep page if network error
+    }
   }
 
   void verificationFunction() async {
@@ -67,10 +103,23 @@ class VerificationController extends GetxController {
       } else {
         var error = apiErrorFromJson(response.body);
 
-        Get.snackbar("Không xác minh được tài khoản", error.message,
+        // If user no longer exists (TTL auto-delete), clear local session and go to login
+        if (response.statusCode == 404 || error.message.contains("User not found")) {
+          await box.erase();
+          Get.snackbar(
+            "Không xác minh được tài khoản",
+            "Tài khoản đã bị xoá do không xác minh trong 10 phút",
             colorText: kLightWhite,
             backgroundColor: kRed,
-            icon: const Icon(Icons.error_outline));
+            icon: const Icon(Icons.error_outline),
+          );
+          Get.offAll(() => const LoginRedirect());
+        } else {
+          Get.snackbar("Không xác minh được tài khoản", error.message,
+              colorText: kLightWhite,
+              backgroundColor: kRed,
+              icon: const Icon(Icons.error_outline));
+        }
       }
     } catch (e) {
       debugPrint(e.toString());

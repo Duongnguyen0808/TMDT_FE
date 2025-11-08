@@ -6,6 +6,7 @@ import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/common/shimmers/custom_button.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/controllers/verification_controller.dart';
+import 'package:appliances_flutter/controllers/login_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -19,6 +20,7 @@ class VerificationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(VerificationController());
+    final loginController = Get.put(LoginController());
     return Scaffold(
       backgroundColor: kPrimary,
       appBar: AppBar(
@@ -73,6 +75,17 @@ class VerificationPage extends StatelessWidget {
                     text: "Xác minh tài khoản",
                     onTap: () {
                       controller.verificationFunction();
+                    },
+                    btnHeight: 35.h,
+                    btnWidth: width,
+                  ),
+                  SizedBox(
+                    height: 10.h,
+                  ),
+                  CustomButton(
+                    text: "Đăng xuất",
+                    onTap: () {
+                      loginController.logout();
                     },
                     btnHeight: 35.h,
                     btnWidth: width,

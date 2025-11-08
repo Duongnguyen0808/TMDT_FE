@@ -6,7 +6,10 @@ import 'package:appliances_flutter/controllers/login_controller.dart';
 import 'package:appliances_flutter/models/login_response.dart';
 import 'package:appliances_flutter/views/auth/login_redirect.dart';
 import 'package:appliances_flutter/views/auth/verification_page.dart';
+import 'package:appliances_flutter/views/orders/user_orders.dart' as orders;
 import 'package:appliances_flutter/views/profile/addresses_page.dart';
+import 'package:appliances_flutter/views/profile/service_center_page.dart';
+import 'package:appliances_flutter/views/profile/support_page.dart';
 
 import 'package:appliances_flutter/views/profile/widget/profile_title_widget.dart';
 import 'package:appliances_flutter/views/profile/widget/user_info_widget.dart';
@@ -62,7 +65,7 @@ class ProfilePage extends StatelessWidget {
                 children: [
                   ProfileTileWidget(
                       onTap: () {
-                        Get.to(() => const UserOrders(),
+                        Get.to(() => const orders.UserOrders(),
                             transition: Transition.cupertino,
                             duration: const Duration(milliseconds: 900));
                       },
@@ -101,12 +104,16 @@ class ProfilePage extends StatelessWidget {
                       title: "Địa chỉ giao hàng",
                       icon: SimpleLineIcons.location_pin),
                   ProfileTileWidget(
-                    onTap: () {},
+                    onTap: () {
+                      Get.to(() => const ServiceCenterPage());
+                    },
                     title: "Trung tâm dịch vụ",
                     icon: AntDesign.customerservice,
                   ),
                   ProfileTileWidget(
-                    onTap: () {},
+                    onTap: () {
+                      Get.to(() => const SupportPage());
+                    },
                     title: "Hỗ trợ khách hàng",
                     icon: MaterialIcons.rss_feed,
                   ),
@@ -120,7 +127,9 @@ class ProfilePage extends StatelessWidget {
             ),
             SizedBox(height: 20.h),
             CustomButton(
-              onTap: () {},
+              onTap: () {
+                controller.logout();
+              },
               btnColor: kRed,
               text: "Đăng xuất",
               radius: 0,

@@ -2,6 +2,7 @@ import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/controllers/cart_controller.dart';
+import 'package:appliances_flutter/controllers/favorites_controller.dart';
 import 'package:appliances_flutter/models/appliances_model.dart';
 import 'package:appliances_flutter/models/cart_request.dart';
 import 'package:appliances_flutter/views/appliances/appliances_page.dart';
@@ -9,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:appliances_flutter/utils/currency.dart';
 
 import 'package:get/get.dart';
 
@@ -21,6 +23,7 @@ class AppliancesTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(CartController());
+    final favController = Get.put(FavoritesController());
     return GestureDetector(
         onTap: () {
           Get.to(() => AppliancesPage(appliances: appliances));
@@ -130,7 +133,7 @@ class AppliancesTitle extends StatelessWidget {
                     color: kPrimary, borderRadius: BorderRadius.circular(10.r)),
                 child: Center(
                   child: ReusableText(
-                      text: "\$ ${appliances.price.toStringAsFixed(2)}",
+                      text: usdToVndText(appliances.price),
                       style: appStyle(12, kLightWhite, FontWeight.bold)),
                 ),
               ),
@@ -163,6 +166,31 @@ class AppliancesTitle extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
+            ),
+            Positioned(
+              right: 100.w,
+              top: 6.h,
+              child: GestureDetector(
+                onTap: () => favController.toggleFavorite(appliances),
+                child: Obx(() {
+                  final isFav = favController.isFavorite(appliances.id);
+                  return Container(
+                    width: 19.w,
+                    height: 19.h,
+                    decoration: BoxDecoration(
+                        color: isFav ? kRed : kLightWhite,
+                        borderRadius: BorderRadius.circular(10.r),
+                        border: Border.all(color: kRed.withOpacity(0.6))),
+                    child: Center(
+                      child: Icon(
+                        isFav ? Ionicons.heart : Ionicons.heart_outline,
+                        size: 15.h,
+                        color: isFav ? kLightWhite : kRed,
+                      ),
+                    ),
+                  );
+                }),
               ),
             )
           ],

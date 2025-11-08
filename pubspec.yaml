@@ -34,8 +34,7 @@ dependencies:
   flutter_svg: ^2.0.9
   lottie: ^2.7.0
   get_storage: ^2.1.1
-  webview_flutter: ^4.4.2
-  webview_flutter_android: ^3.12.1
+  webview_flutter_android: ^4.10.5
   webview_flutter_wkwebview: ^3.9.4
   device_preview: ^1.1.0
   otp_text_field: ^1.1.3
@@ -44,9 +43,10 @@ dependencies:
   country_picker: ^2.0.23
   phone_otp_verification: ^1.0.3
   flutter_otp_text_field: ^1.5.1+1
-  vietmap_flutter_plugin: ^0.5.2
   app_links: ^6.4.1
   webview_flutter: ^4.13.0
+  vietmap_flutter_gl: ^4.1.0
+  firebase_app_check: ^0.4.1+2
 
 dev_dependencies:
   flutter_test:
@@ -63,3 +63,7 @@ flutter:
     - assets/anime/
     - assets/icons/
     - assets/images/restaurant_bk.png
+
+dependency_overrides:
+  vietmap_flutter_gl_web:
+    path: ../packages/vietmap_flutter_gl_web

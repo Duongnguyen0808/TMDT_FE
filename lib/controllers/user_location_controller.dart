@@ -10,7 +10,7 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:vietmap_flutter_gl/vietmap_flutter_gl.dart';
+import 'package:appliances_flutter/vendor/vietmap_platform.dart';
 import 'package:http/http.dart' as http;
 
 class UserLocationController extends GetxController {
@@ -30,10 +30,10 @@ class UserLocationController extends GetxController {
     _tabIndex.value = value;
   }
 
-  LatLng position = const LatLng(0, 0);
+  LatLng position = LatLng(0, 0);
 
   void setPosition(LatLng value) {
-    value = position;
+    position = value;
     update();
   }
 
@@ -118,17 +118,12 @@ class UserLocationController extends GetxController {
             backgroundColor: kPrimary,
             icon: const Icon(Ionicons.fast_food_outline));
 
-        // Ưu tiên callback để page gọi quyết định điều hướng/refresh
+        // Call the callback if provided
         if (onAddressSet != null) {
           onAddressSet();
-        } else {
-          // Mặc định: quay lại trang trước (ví dụ Addresses)
-          if (Get.context != null) {
-            Navigator.of(Get.context!).maybePop();
-          } else {
-            Get.back();
-          }
         }
+
+        Get.offAll(() => MainScreen());
       } else {
         var error = apiErrorFromJson(response.body);
 

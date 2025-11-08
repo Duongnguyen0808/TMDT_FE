@@ -1,5 +1,6 @@
 // ignore_for_file: unused_local_variable
 
+import 'package:appliances_flutter/common/address_buttom_sheet.dart';
 import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/custom_text_field.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
@@ -7,6 +8,7 @@ import 'package:appliances_flutter/common/shimmers/custom_button.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/controllers/appliances_controller.dart';
 import 'package:appliances_flutter/controllers/cart_controller.dart';
+import 'package:appliances_flutter/controllers/favorites_controller.dart';
 import 'package:appliances_flutter/controllers/login_controller.dart';
 import 'package:appliances_flutter/hooks/fetch_default.dart';
 import 'package:appliances_flutter/hooks/fetch_store.dart';
@@ -27,7 +29,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:appliances_flutter/utils/currency.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
 class AppliancesPage extends StatefulHookWidget {
   const AppliancesPage({super.key, required this.appliances});
@@ -42,11 +46,15 @@ class _AppliancesPageState extends State<AppliancesPage>
     with WidgetsBindingObserver {
   final TextEditingController _preferences = TextEditingController();
   final PageController _pageController = PageController();
+  late AppliancesController _appliancesController;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Khởi tạo controller và nạp additives một lần ở initState để tránh cập nhật reactive trong build
+    _appliancesController = Get.put(AppliancesController());
+    _appliancesController.loadAdditives(widget.appliances.additives);
   }
 
   @override
@@ -66,17 +74,17 @@ class _AppliancesPageState extends State<AppliancesPage>
   @override
   Widget build(BuildContext context) {
     final cartController = Get.put(CartController());
+    final favController = Get.put(FavoritesController());
+    final box = GetStorage();
+    var addressTriger = box.read('defaultAddress');
     LoginResponse? user;
     // Fetch the store by id to get a single StoreModel
-    final data = useFetchDefault();
+    final data = useFetchDefault(context);
     AddressResponse? address = data.data;
     final hookResult = useFetchStoreById(widget.appliances.store);
     StoreModel? store = hookResult.data;
-    final controller = Get.put(AppliancesController());
     final loginController = Get.put(LoginController());
-
     user = loginController.getUserInfo();
-    controller.loadAdditives(widget.appliances.additives);
 
     // Nếu chưa đăng nhập, chuyển sang màn hình LoginRedirect thay vì yêu cầu địa chỉ
     if (user == null) {
@@ -88,18 +96,6 @@ class _AppliancesPageState extends State<AppliancesPage>
       return Scaffold(
         body: Center(
           child: CircularProgressIndicator(color: kPrimary),
-        ),
-      );
-    }
-
-    // Only show ShippingAddress if no default address exists
-    if (address == null) {
-      return Scaffold(
-        body: ShippingAddress(
-          onAddressSet: () {
-            // Refetch default address when returning from address page
-            data.refetch!();
-          },
         ),
       );
     }
@@ -117,7 +113,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                   child: PageView.builder(
                       controller: _pageController,
                       onPageChanged: (i) {
-                        controller.changePage(i);
+                        _appliancesController.changePage(i);
                       },
                       itemCount: widget.appliances.imageUrl.length,
                       itemBuilder: (context, i) {
@@ -146,9 +142,10 @@ class _AppliancesPageState extends State<AppliancesPage>
                             height: 10.h,
                             decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: controller.currentPage == index
-                                    ? kSecondary
-                                    : kGrayLight),
+                                color:
+                                    _appliancesController.currentPage == index
+                                        ? kSecondary
+                                        : kGrayLight),
                           );
                         }),
                       ),
@@ -167,6 +164,25 @@ class _AppliancesPageState extends State<AppliancesPage>
                       color: kPrimary,
                       size: 30,
                     ),
+                  ),
+                ),
+                Positioned(
+                  top: 40.h,
+                  right: 12.w,
+                  child: GestureDetector(
+                    onTap: () => favController.toggleFavorite(widget.appliances),
+                    child: Obx(() {
+                      final isFav = favController.isFavorite(widget.appliances.id);
+                      return CircleAvatar(
+                        radius: 16.r,
+                        backgroundColor: isFav ? kRed : kLightWhite,
+                        child: Icon(
+                          isFav ? Ionicons.heart : Ionicons.heart_outline,
+                          color: isFav ? kLightWhite : kRed,
+                          size: 18,
+                        ),
+                      );
+                    }),
                   ),
                 ),
                 Positioned(
@@ -201,8 +217,9 @@ class _AppliancesPageState extends State<AppliancesPage>
                         style: appStyle(18, kDark, FontWeight.w600)),
                     Obx(
                       () => ReusableText(
-                          text:
-                              "\$ ${((widget.appliances.price + controller.additivePrice) * controller.count.value)}",
+                          text: usdToVndText((widget.appliances.price +
+                                  _appliancesController.additivePrice) *
+                              _appliancesController.count.value),
                           style: appStyle(18, kPrimary, FontWeight.w600)),
                     )
                   ],
@@ -254,9 +271,10 @@ class _AppliancesPageState extends State<AppliancesPage>
                 ),
                 Obx(
                   () => Column(
-                    children:
-                        List.generate(controller.additivesList.length, (index) {
-                      final additive = controller.additivesList[index];
+                    children: List.generate(
+                        _appliancesController.additivesList.length, (index) {
+                      final additive =
+                          _appliancesController.additivesList[index];
                       return CheckboxListTile(
                           contentPadding: EdgeInsets.zero,
                           visualDensity: VisualDensity.compact,
@@ -274,15 +292,16 @@ class _AppliancesPageState extends State<AppliancesPage>
                                 width: 5.w,
                               ),
                               ReusableText(
-                                  text: "\$ ${additive.price}",
+                                  text: usdToVndText(
+                                      double.tryParse(additive.price) ?? 0.0),
                                   style:
                                       appStyle(11, kPrimary, FontWeight.w600)),
                             ],
                           ),
                           onChanged: (bool? value) {
                             additive.toggleChecked();
-                            controller.getTotalPrice();
-                            controller.getCartAdditive();
+                            _appliancesController.getTotalPrice();
+                            _appliancesController.getCartAdditive();
                           });
                     }),
                   ),
@@ -303,7 +322,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                       children: [
                         GestureDetector(
                           onTap: () {
-                            controller.increment();
+                            _appliancesController.increment();
                           },
                           child: const Icon(AntDesign.pluscircleo),
                         ),
@@ -312,12 +331,12 @@ class _AppliancesPageState extends State<AppliancesPage>
                                 const EdgeInsets.symmetric(horizontal: 8.0),
                             child: Obx(
                               () => ReusableText(
-                                  text: "${controller.count.value}",
+                                  text: "${_appliancesController.count.value}",
                                   style: appStyle(14, kDark, FontWeight.w600)),
                             )),
                         GestureDetector(
                           onTap: () {
-                            controller.decrement();
+                            _appliancesController.decrement();
                           },
                           child: const Icon(AntDesign.minuscircleo),
                         )
@@ -362,10 +381,12 @@ class _AppliancesPageState extends State<AppliancesPage>
                             Get.to(() => const LoginPage());
                           } else if (user.phoneVerification == false) {
                             showVerificationSheet(context);
+                          } else if (addressTriger == false) {
+                            showAddressSheet(context);
                           } else {
                             double price = (widget.appliances.price +
-                                    controller.additivePrice) *
-                                controller.count.value;
+                                    _appliancesController.additivePrice) *
+                                _appliancesController.count.value;
 
                             // Nếu store chưa tải xong, vẫn cho điều hướng.
                             // OrderPage đã xử lý khi store null và hiển thị fallback.
@@ -379,9 +400,10 @@ class _AppliancesPageState extends State<AppliancesPage>
                                       imageUrl: widget.appliances.imageUrl,
                                       time: widget.appliances.time,
                                     ),
-                                    quantity: controller.count.value,
+                                    quantity: _appliancesController.count.value,
                                     price: price,
-                                    additives: controller.getCartAdditive(),
+                                    additives:
+                                        _appliancesController.getCartAdditive(),
                                     instructions: _preferences.text,
                                     id: "" // placeholder id; backend assigns real id on order
                                     );
@@ -403,7 +425,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                           child: Padding(
                             padding: EdgeInsets.symmetric(horizontal: 12.w),
                             child: ReusableText(
-                                text: "Place Order",
+                                text: "Đặt hàng",
                                 style:
                                     appStyle(18, kLightWhite, FontWeight.w600)),
                           ),
@@ -412,13 +434,14 @@ class _AppliancesPageState extends State<AppliancesPage>
                       GestureDetector(
                         onTap: () {
                           double price = (widget.appliances.price +
-                                  controller.additivePrice) *
-                              controller.count.value;
+                                  _appliancesController.additivePrice) *
+                              _appliancesController.count.value;
 
                           var data = CartRequest(
                               productId: widget.appliances.id,
-                              additives: controller.getCartAdditive(),
-                              quantity: controller.count.value,
+                              additives:
+                                  _appliancesController.getCartAdditive(),
+                              quantity: _appliancesController.count.value,
                               totalPrice: price);
 
                           String cart = cartRequestToJson(data);

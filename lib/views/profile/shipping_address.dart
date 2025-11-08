@@ -18,8 +18,9 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'package:get/get.dart';
-import 'package:vietmap_flutter_gl/vietmap_flutter_gl.dart';
+
 import 'package:http/http.dart' as http;
+import 'package:appliances_flutter/vendor/vietmap_platform.dart';
 
 class ShippingAddress extends StatefulWidget {
   const ShippingAddress({super.key, this.onAddressSet});
@@ -161,10 +162,10 @@ class _ShippingAddressState extends State<ShippingAddress> {
       await _mapController!.addSymbol(
         SymbolOptions(
           geometry: position,
-          iconImage: "marker-15", // Sử dụng icon mặc định của Vietmap
-          iconSize: 3.0, // Tăng kích thước để dễ nhìn hơn
-          iconColor: kRed, // Màu đỏ nổi bật
-          iconOpacity: 1.0, // Độ trong suốt tối đa
+          iconImage: "marker-15",
+          iconSize: 3.0,
+          iconColor: kRed,
+          iconOpacity: 1.0,
         ),
       );
 
@@ -173,10 +174,10 @@ class _ShippingAddressState extends State<ShippingAddress> {
         CircleOptions(
           geometry: position,
           circleRadius: 8.0,
-          circleColor: kRed, // Màu đỏ nổi bật
+          circleColor: kRed,
           circleOpacity: 0.3,
           circleStrokeWidth: 2.0,
-          circleStrokeColor: kRed, // Màu đỏ nổi bật
+          circleStrokeColor: kRed,
           circleStrokeOpacity: 0.8,
         ),
       );
@@ -206,22 +207,16 @@ class _ShippingAddressState extends State<ShippingAddress> {
       );
 
       LatLng currentLatLng = LatLng(position.latitude, position.longitude);
-      
+
       setState(() {
         _selectedPosition = currentLatLng;
       });
 
-      // Di chuyển camera đến vị trí hiện tại
-      await _mapController?.animateCamera(
-        CameraUpdate.newLatLngZoom(currentLatLng, 16.0),
-      );
-
       // Thêm marker tại vị trí hiện tại
       _addMarker(currentLatLng);
-      
+
       // Lấy địa chỉ từ tọa độ
       _getUserAddress(currentLatLng);
-      
     } catch (e) {
       Get.snackbar('Lỗi', 'Không thể lấy vị trí hiện tại: $e');
     }
@@ -345,7 +340,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
                   },
                   initialCameraPosition: CameraPosition(
                       target: _selectedPosition ??
-                          const LatLng(21.0285, 105.8542), // Hà Nội
+                          LatLng(21.0285, 105.8542), // Hà Nội
                       zoom: 15),
                   onMapClick: (point, latlng) {
                     final locationController =
@@ -355,7 +350,8 @@ class _ShippingAddressState extends State<ShippingAddress> {
                       _selectedPosition = latlng;
                     });
                     _addMarker(latlng); // Thêm marker tại vị trí được click
-                    _getUserAddress(latlng); // Lấy địa chỉ và hiển thị trong search bar
+                    _getUserAddress(
+                        latlng); // Lấy địa chỉ và hiển thị trong search bar
                   },
                   // Sử dụng onStyleLoadedCallback để thêm marker
                   onStyleLoadedCallback: () {
@@ -363,7 +359,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
                       _addMarker(_selectedPosition!);
                     } else {
                       // Thêm marker mặc định tại Hà Nội
-                      _addMarker(const LatLng(21.0285, 105.8542));
+                      _addMarker(LatLng(21.0285, 105.8542));
                     }
                   },
                 ),
@@ -490,7 +486,8 @@ class _ShippingAddressState extends State<ShippingAddress> {
 
                           String data = addressModelToJson(model);
 
-                          locationController.addAddress(data, onAddressSet: widget.onAddressSet);
+                          locationController.addAddress(data,
+                              onAddressSet: widget.onAddressSet);
                         } else {
                           Get.snackbar(
                             "Thiếu thông tin",

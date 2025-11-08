@@ -13,6 +13,7 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginController extends GetxController {
   final box = GetStorage();
@@ -77,8 +78,14 @@ class LoginController extends GetxController {
     }
   }
 
-  void logout() {
-    box.erase();
+  void logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (e) {
+      debugPrint('Firebase signOut error: $e');
+    }
+
+    await box.erase();
     Get.offAll(() => MainScreen(),
         transition: Transition.fade,
         duration: const Duration(milliseconds: 900));

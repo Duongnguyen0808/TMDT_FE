@@ -51,7 +51,7 @@ class CartResponse {
 class ProductId {
   final String id;
   final String title;
-  final String store;
+  final CartStore store;
   final double rating;
   final String ratingCount;
   final List<String> imageUrl;
@@ -68,7 +68,7 @@ class ProductId {
   factory ProductId.fromJson(Map<String, dynamic> json) => ProductId(
         id: json["_id"],
         title: json["title"],
-        store: json["store"],
+        store: CartStore.fromJson(json["store"]),
         rating: json["rating"]?.toDouble(),
         ratingCount: json["ratingCount"],
         imageUrl: List<String>.from(json["imageUrl"].map((x) => x)),
@@ -77,9 +77,73 @@ class ProductId {
   Map<String, dynamic> toJson() => {
         "_id": id,
         "title": title,
-        "store": store,
+        "store": store.toJson(),
         "rating": rating,
         "ratingCount": ratingCount,
         "imageUrl": List<dynamic>.from(imageUrl.map((x) => x)),
+      };
+}
+
+class CartStore {
+  final String id;
+  final String time;
+  final CartCoords coords;
+
+  CartStore({
+    required this.id,
+    required this.time,
+    required this.coords,
+  });
+
+  factory CartStore.fromJson(Map<String, dynamic> json) => CartStore(
+        id: (json["_id"] ?? json["id"]).toString(),
+        time: json["time"] ?? "",
+        coords: CartCoords.fromJson(json["coords"] ?? {}),
+      );
+
+  Map<String, dynamic> toJson() => {
+        "_id": id,
+        "time": time,
+        "coords": coords.toJson(),
+      };
+}
+
+class CartCoords {
+  final String id;
+  final double latitude;
+  final double longitude;
+  final String address;
+  final String title;
+  final double latitudeDelta;
+  final double longitudeDelta;
+
+  CartCoords({
+    required this.id,
+    required this.latitude,
+    required this.longitude,
+    required this.address,
+    required this.title,
+    required this.latitudeDelta,
+    required this.longitudeDelta,
+  });
+
+  factory CartCoords.fromJson(Map<String, dynamic> json) => CartCoords(
+        id: (json["id"] ?? json["_id"] ?? "").toString(),
+        latitude: (json["latitude"] ?? 0.0).toDouble(),
+        longitude: (json["longitude"] ?? 0.0).toDouble(),
+        address: json["address"] ?? "",
+        title: json["title"] ?? "",
+        latitudeDelta: (json["latitudeDelta"] ?? 0.0).toDouble(),
+        longitudeDelta: (json["longitudeDelta"] ?? 0.0).toDouble(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        "id": id,
+        "latitude": latitude,
+        "longitude": longitude,
+        "address": address,
+        "title": title,
+        "latitudeDelta": latitudeDelta,
+        "longitudeDelta": longitudeDelta,
       };
 }

@@ -1,0 +1,1 @@
+export 'vietmap_stub.dart' if (dart.library.io) 'vietmap_mobile.dart';

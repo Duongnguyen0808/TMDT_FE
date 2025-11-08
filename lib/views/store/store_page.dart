@@ -9,6 +9,7 @@ import 'package:appliances_flutter/views/store/widget/xplore_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:appliances_flutter/utils/currency.dart';
 
 class StorePage extends StatefulWidget {
   const StorePage({super.key, required this.store});
@@ -66,9 +67,9 @@ class _StorePageState extends State<StorePage> with TickerProviderStateMixin {
                   SizedBox(
                     height: 3.h,
                   ),
-                  const RowText(
+                  RowText(
                     first: "Giá ước tính",
-                    second: "\$2.7",
+                    second: usdToVndText(2.7),
                   ),
                   SizedBox(
                     height: 3.h,

@@ -2,20 +2,19 @@ import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/controllers/cart_controller.dart';
-import 'package:appliances_flutter/models/appliances_model.dart';
 import 'package:appliances_flutter/models/cart_request.dart';
+import 'package:appliances_flutter/models/order_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
-import 'package:appliances_flutter/utils/currency.dart';
 
 import 'package:get/get.dart';
 
-class OrderTile extends StatelessWidget {
-  OrderTile({super.key, required this.appliances, this.color});
+class ClientOrderTile extends StatelessWidget {
+  ClientOrderTile({super.key, required this.appliances, this.color});
 
-  final AppliancesModel appliances;
+  final OrderItem appliances;
   final Color? color;
 
   @override
@@ -44,7 +43,7 @@ class OrderTile extends StatelessWidget {
                         width: 70.w,
                         height: 70.h,
                         child: Image.network(
-                          appliances.imageUrl[0],
+                          appliances.appliancesId.imageUrl[0],
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -75,12 +74,12 @@ class OrderTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ReusableText(
-                      text: appliances.title,
+                      text: appliances.appliancesId.title,
                       style: appStyle(11, kDark, FontWeight.w400),
                     ),
                     ReusableText(
-                      text: "Delivery time: ${appliances.time}",
-                      style: appStyle(11, kGray, FontWeight.w400),
+                      text: "Qauntity: ${appliances.quantity}",
+                      style: appStyle(11, kGray, FontWeight.w600),
                     ),
                     SizedBox(
                       width: width * 0.7,
@@ -89,7 +88,7 @@ class OrderTile extends StatelessWidget {
                           scrollDirection: Axis.horizontal,
                           itemCount: appliances.additives.length,
                           itemBuilder: (context, i) {
-                            Additive additive = appliances.additives[i];
+                            String additive = appliances.additives[i];
                             return Container(
                               margin: EdgeInsets.only(right: 5.w),
                               decoration: BoxDecoration(
@@ -102,7 +101,7 @@ class OrderTile extends StatelessWidget {
                                 child: Padding(
                                   padding: EdgeInsets.all(2.h),
                                   child: ReusableText(
-                                      text: additive.title,
+                                      text: additive,
                                       style:
                                           appStyle(8, kGray, FontWeight.w400)),
                                 ),
@@ -126,7 +125,7 @@ class OrderTile extends StatelessWidget {
                 color: kPrimary, borderRadius: BorderRadius.circular(10.r)),
             child: Center(
               child: ReusableText(
-                  text: usdToVndText(appliances.price),
+                  text: "\$ ${appliances.price.toStringAsFixed(2)}",
                   style: appStyle(12, kLightWhite, FontWeight.bold)),
             ),
           ),

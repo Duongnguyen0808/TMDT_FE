@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/constants/constants.dart';
+import 'package:appliances_flutter/utils/currency.dart';
 
 class AppliancesWidget extends StatelessWidget {
   const AppliancesWidget(
@@ -61,7 +62,7 @@ class AppliancesWidget extends StatelessWidget {
                             text: title,
                             style: appStyle(12, kDark, FontWeight.w500)),
                         ReusableText(
-                            text: "\$ $price",
+                            text: formatVND((double.tryParse(price) ?? 0) * usdToVndRate),
                             style: appStyle(12, kPrimary, FontWeight.w600)),
                       ],
                     ),

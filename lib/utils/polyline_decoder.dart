@@ -1,4 +1,4 @@
-import 'package:vietmap_flutter_gl/vietmap_flutter_gl.dart';
+import 'package:appliances_flutter/vendor/vietmap_platform.dart';
 
 /// Decode a polyline string (precision=5 by default) to a list of LatLng.
 /// Manual decoder để tránh phụ thuộc class có thể không tồn tại.
