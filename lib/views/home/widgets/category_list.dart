@@ -22,9 +22,9 @@ class CategoryList extends HookWidget {
       child: isLoading
           ? const CatergoriesShimmer(itemCount: 8) // gọi shimmer 8 item
           : error != null
-              ? Center(child: Text("Error: ${error.toString()}"))
+              ? Center(child: Text("Lỗi: ${error.toString()}"))
               : categoriesList == null || categoriesList.isEmpty
-                  ? const Center(child: Text("No categories found"))
+                  ? const Center(child: Text("Không tìm thấy danh mục"))
                   : ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: categoriesList.length,

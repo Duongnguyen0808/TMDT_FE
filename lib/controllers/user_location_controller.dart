@@ -6,7 +6,6 @@ import 'package:appliances_flutter/models/api_error.dart';
 import 'package:appliances_flutter/views/entrypoint.dart';
 import 'package:appliances_flutter/config/vietmap_config.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -64,7 +63,7 @@ class UserLocationController extends GetxController {
 
         if (response.statusCode == 200) {
           final responseBody = jsonDecode(response.body);
-          
+
           if (responseBody != null && responseBody.isNotEmpty) {
             final address = responseBody[0]['display'];
             setAddress = address;
@@ -81,13 +80,12 @@ class UserLocationController extends GetxController {
       final url = Uri.parse(
           'https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&addressdetails=1');
 
-      final response = await http.get(url, headers: {
-        'User-Agent': 'Flutter App'
-      });
+      final response =
+          await http.get(url, headers: {'User-Agent': 'Flutter App'});
 
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(response.body);
-        
+
         final address = responseBody['display_name'] ?? '';
         setAddress = address;
       }
@@ -112,11 +110,9 @@ class UserLocationController extends GetxController {
       var response = await http.post(url, headers: headers, body: data);
 
       if (response.statusCode == 201) {
-        Get.snackbar(
-            "Your address has been added", "Enjoy your awesome experience",
+        Get.snackbar("Thêm địa chỉ thành công", "Địa chỉ của bạn đã được lưu",
             colorText: kLightWhite,
-            backgroundColor: kPrimary,
-            icon: const Icon(Ionicons.fast_food_outline));
+            backgroundColor: kPrimary);
 
         // Call the callback if provided
         if (onAddressSet != null) {
@@ -127,10 +123,9 @@ class UserLocationController extends GetxController {
       } else {
         var error = apiErrorFromJson(response.body);
 
-        Get.snackbar("Failed to add address", error.message,
+        Get.snackbar("Thêm địa chỉ thất bại", error.message,
             colorText: kLightWhite,
-            backgroundColor: kRed,
-            icon: const Icon(Icons.error_outline));
+            backgroundColor: kRed);
       }
     } catch (e) {
       debugPrint(e.toString());

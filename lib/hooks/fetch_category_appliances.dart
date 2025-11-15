@@ -22,14 +22,27 @@ FetchAppliancess useFetchAppliancesByCategory(String code) {
     isLoading.value = true;
 
     try {
-      Uri url = Uri.parse(
-          '$appBaseUrl/api/appliances/${controller.categoryValue}/$code');
+      // Nếu code rỗng, chỉ lấy theo category. Ngược lại lấy theo cả category và code
+      Uri url = code.isEmpty
+          ? Uri.parse(
+              '$appBaseUrl/api/appliances/category/${controller.categoryValue}')
+          : Uri.parse(
+              '$appBaseUrl/api/appliances/${controller.categoryValue}/$code');
+
+      print('🔍 Category ID: ${controller.categoryValue}');
+      print('🔍 Fetching URL: $url');
+
       final response = await http.get(url);
 
+      print('📡 Status: ${response.statusCode}');
       if (response.statusCode == 200) {
         appliancess.value = appliancesModelFromJson(response.body);
+        print('✅ Found ${appliancess.value.length} products');
+      } else {
+        print('❌ Error: ${response.body}');
       }
     } catch (e) {
+      print('💥 Exception: $e');
       debugPrint(e.toString());
     } finally {
       isLoading.value = false;
@@ -37,11 +50,12 @@ FetchAppliancess useFetchAppliancesByCategory(String code) {
   }
 
   useEffect(() {
-    Future.delayed(const Duration(seconds: 3));
-    fetchData();
-
+    // Chỉ fetch khi có categoryValue
+    if (controller.categoryValue.isNotEmpty) {
+      fetchData();
+    }
     return null;
-  }, []);
+  }, [controller.categoryValue]);
 
   void refetch() {
     isLoading.value = true;

@@ -12,11 +12,15 @@ import 'package:get/get.dart';
 import 'package:get/state_manager.dart';
 
 class AppliancesList extends HookWidget {
-  const AppliancesList({super.key});
+  final bool useRecommendation; // true = random, false = all
+
+  const AppliancesList({super.key, this.useRecommendation = false});
 
   @override
   Widget build(BuildContext context) {
-    final hookResults = useFetchAppliances("41007428");
+    // useRecommendation=true: lấy random (gợi ý), false: lấy tất cả
+    final hookResults =
+        useFetchAppliances(useRecommendation ? "recommendation" : "");
     List<AppliancesModel>? appliancess = hookResults.data;
     final isLoading = hookResults.isLoading;
     return Container(
@@ -35,7 +39,7 @@ class AppliancesList extends HookWidget {
                     image: appliances.imageUrl[0],
                     title: appliances.title,
                     time: appliances.time,
-                    price: appliances.price.toStringAsFixed(2));
+                    price: appliances.price.toString()); // Truyền số thuần
               }),
             ),
     );

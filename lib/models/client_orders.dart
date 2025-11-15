@@ -30,6 +30,9 @@ class ClientOrders {
   final DateTime createdAt;
   final DateTime updatedAt;
   final int v;
+  final String? cancellationReason;
+  final String? promoCode;
+  final double? discountAmount;
 
   ClientOrders({
     required this.id,
@@ -51,6 +54,9 @@ class ClientOrders {
     required this.createdAt,
     required this.updatedAt,
     required this.v,
+    this.cancellationReason,
+    this.promoCode,
+    this.discountAmount,
   });
 
   factory ClientOrders.fromJson(Map<String, dynamic> json) => ClientOrders(
@@ -61,7 +67,9 @@ class ClientOrders {
         orderTotal: json["orderTotal"]?.toDouble(),
         deliveryFee: json["deliveryFee"]?.toDouble(),
         grandTotal: json["grandTotal"]?.toDouble(),
-        deliveryAddress: json["deliveryAddress"],
+        deliveryAddress: json["deliveryAddress"] is String
+            ? json["deliveryAddress"]
+            : json["deliveryAddress"]?["addressLine1"] ?? "",
         storeAddress: json["storeAddress"],
         paymentMethod: json["paymentMethod"],
         paymentStatus: json["paymentStatus"],
@@ -76,6 +84,9 @@ class ClientOrders {
         createdAt: DateTime.parse(json["createdAt"]),
         updatedAt: DateTime.parse(json["updatedAt"]),
         v: json["__v"],
+        cancellationReason: json["cancellationReason"],
+        promoCode: json["promoCode"],
+        discountAmount: json["discountAmount"]?.toDouble(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -98,11 +109,14 @@ class ClientOrders {
         "createdAt": createdAt.toIso8601String(),
         "updatedAt": updatedAt.toIso8601String(),
         "__v": v,
+        "cancellationReason": cancellationReason,
+        "promoCode": promoCode,
+        "discountAmount": discountAmount,
       };
 }
 
 class OrderItem {
-  final FoodId foodId;
+  final AppliancesId appliancesId;
   final int quantity;
   final double price;
   final List<String> additives;
@@ -110,7 +124,7 @@ class OrderItem {
   final String id;
 
   OrderItem({
-    required this.foodId,
+    required this.appliancesId,
     required this.quantity,
     required this.price,
     required this.additives,
@@ -119,16 +133,21 @@ class OrderItem {
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) => OrderItem(
-        foodId: FoodId.fromJson(json["foodId"]),
-        quantity: json["quantity"],
-        price: json["price"]?.toDouble(),
-        additives: List<String>.from(json["additives"].map((x) => x)),
-        instructions: json["instructions"],
-        id: json["_id"],
+        appliancesId: json["appliancesId"] != null
+            ? AppliancesId.fromJson(json["appliancesId"])
+            : AppliancesId(
+                id: "", title: "Unknown", rating: 0, imageUrl: [], time: ""),
+        quantity: json["quantity"] ?? 0,
+        price: json["price"]?.toDouble() ?? 0.0,
+        additives: json["additives"] != null
+            ? List<String>.from(json["additives"].map((x) => x))
+            : [],
+        instructions: json["instructions"] ?? "",
+        id: json["_id"] ?? "",
       );
 
   Map<String, dynamic> toJson() => {
-        "foodId": foodId.toJson(),
+        "appliancesId": appliancesId.toJson(),
         "quantity": quantity,
         "price": price,
         "additives": List<dynamic>.from(additives.map((x) => x)),
@@ -137,14 +156,14 @@ class OrderItem {
       };
 }
 
-class FoodId {
+class AppliancesId {
   final String id;
   final String title;
   final double rating;
   final List<String> imageUrl;
   final String time;
 
-  FoodId({
+  AppliancesId({
     required this.id,
     required this.title,
     required this.rating,
@@ -152,12 +171,14 @@ class FoodId {
     required this.time,
   });
 
-  factory FoodId.fromJson(Map<String, dynamic> json) => FoodId(
-        id: json["_id"],
-        title: json["title"],
-        rating: json["rating"]?.toDouble(),
-        imageUrl: List<String>.from(json["imageUrl"].map((x) => x)),
-        time: json["time"],
+  factory AppliancesId.fromJson(Map<String, dynamic> json) => AppliancesId(
+        id: json["_id"] ?? "",
+        title: json["title"] ?? "Unknown",
+        rating: json["rating"]?.toDouble() ?? 0.0,
+        imageUrl: json["imageUrl"] != null
+            ? List<String>.from(json["imageUrl"].map((x) => x))
+            : [],
+        time: json["time"] ?? "",
       );
 
   Map<String, dynamic> toJson() => {

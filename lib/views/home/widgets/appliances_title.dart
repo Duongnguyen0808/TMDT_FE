@@ -77,47 +77,63 @@ class AppliancesTitle extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 10.w),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ReusableText(
-                          text: appliances.title,
-                          style: appStyle(11, kDark, FontWeight.w400),
-                        ),
-                        ReusableText(
-                          text: "Delivery time: ${appliances.time}",
-                          style: appStyle(11, kGray, FontWeight.w400),
-                        ),
-                        SizedBox(
-                          width: width * 0.7,
-                          height: 15.h,
-                          child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: appliances.additives.length,
-                              itemBuilder: (context, i) {
-                                Additive additive = appliances.additives[i];
-                                return Container(
-                                  margin: EdgeInsets.only(right: 5.w),
-                                  decoration: BoxDecoration(
-                                    color: kSecondaryLight,
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(9.r),
+                    Expanded(
+                      // Thêm Expanded để text không tràn
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: width *
+                                0.45, // Giới hạn chiều rộng để không che icon
+                            child: ReusableText(
+                              text: appliances.title,
+                              style: appStyle(11, kDark, FontWeight.w400),
+                              maxLines: 1,
+                              overflow: TextOverflow
+                                  .ellipsis, // Thêm ... khi text dài
+                            ),
+                          ),
+                          SizedBox(
+                            width: width * 0.5,
+                            child: ReusableText(
+                              text: "Thời gian vận chuyển: ${appliances.time}",
+                              style: appStyle(9, kGray,
+                                  FontWeight.w400), // Giảm size xuống 9
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          SizedBox(
+                            width: width * 0.5,
+                            height: 15.h,
+                            child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: appliances.additives.length,
+                                itemBuilder: (context, i) {
+                                  Additive additive = appliances.additives[i];
+                                  return Container(
+                                    margin: EdgeInsets.only(right: 5.w),
+                                    decoration: BoxDecoration(
+                                      color: kSecondaryLight,
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(9.r),
+                                      ),
                                     ),
-                                  ),
-                                  child: Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(2.h),
-                                      child: ReusableText(
-                                          text: additive.title,
-                                          style: appStyle(
-                                              8, kGray, FontWeight.w400)),
+                                    child: Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(2.h),
+                                        child: ReusableText(
+                                            text: additive.title,
+                                            style: appStyle(
+                                                8, kGray, FontWeight.w400)),
+                                      ),
                                     ),
-                                  ),
-                                );
-                              }),
-                        )
-                      ],
+                                  );
+                                }),
+                          )
+                        ],
+                      ),
                     )
                   ],
                 ),
@@ -127,19 +143,22 @@ class AppliancesTitle extends StatelessWidget {
               right: 5.w,
               top: 6.h,
               child: Container(
-                width: 60.w,
-                height: 19.h,
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                constraints:
+                    BoxConstraints(minWidth: 80.w), // Tăng chiều rộng tối thiểu
+                height: 22.h, // Tăng chiều cao
                 decoration: BoxDecoration(
                     color: kPrimary, borderRadius: BorderRadius.circular(10.r)),
                 child: Center(
                   child: ReusableText(
                       text: usdToVndText(appliances.price),
-                      style: appStyle(12, kLightWhite, FontWeight.bold)),
+                      style: appStyle(11, kLightWhite,
+                          FontWeight.bold)), // Giảm font size xuống 11
                 ),
               ),
             ),
             Positioned(
-              right: 75.w,
+              right: 95.w, // Dịch sang trái thêm
               top: 6.h,
               child: GestureDetector(
                 onTap: () {
@@ -169,7 +188,7 @@ class AppliancesTitle extends StatelessWidget {
               ),
             ),
             Positioned(
-              right: 100.w,
+              right: 120.w, // Dịch thêm sang trái để không che giá
               top: 6.h,
               child: GestureDetector(
                 onTap: () => favController.toggleFavorite(appliances),

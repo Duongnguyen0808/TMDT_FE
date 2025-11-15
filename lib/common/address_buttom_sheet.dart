@@ -13,60 +13,72 @@ Future<dynamic> showAddressSheet(BuildContext context) {
       context: context,
       backgroundColor: Colors.transparent,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (BuildContext context) {
         return Container(
-          height: 500.h,
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
           width: width,
           decoration: BoxDecoration(
             image: const DecorationImage(
                 image: AssetImage("assets/images/restaurant_bk.png"),
-                fit: BoxFit.fill),
+                fit: BoxFit.fill,
+                opacity: 0.3),
             color: kLightWhite,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(12.r),
               topRight: Radius.circular(12.r),
             ),
           ),
-          child: Padding(
-            padding: EdgeInsets.all(8.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  height: 10.h,
-                ),
-                ReusableText(
-                    text: "Add Address",
-                    style: appStyle(18, kPrimary, FontWeight.w600)),
-                SizedBox(
-                    height: 250.h,
-                    child: Column(
-                      children:
-                          List.generate(reasonsToAddAddress.length, (index) {
-                        return ListTile(
-                          leading: const Icon(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(height: 8.h),
+                  ReusableText(
+                      text: "Thêm Địa Chỉ",
+                      style: appStyle(18, kPrimary, FontWeight.w600)),
+                  SizedBox(height: 16.h),
+                  ...List.generate(reasonsToAddAddress.length, (index) {
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: 8.h),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
                             Icons.check_circle_outline,
                             color: kPrimary,
+                            size: 20.sp,
                           ),
-                          title: Text(
-                            reasonsToAddAddress[index],
-                            textAlign: TextAlign.justify,
-                            style: appStyle(11, kGrayLight, FontWeight.normal),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: Text(
+                              reasonsToAddAddress[index],
+                              textAlign: TextAlign.justify,
+                              style:
+                                  appStyle(11, kGrayLight, FontWeight.normal),
+                            ),
                           ),
-                        );
-                      }),
-                    )),
-                SizedBox(
-                  height: 10.h,
-                ),
-                CustomButton(
-                  text: "Go to add adress",
-                  btnHeight: 35.h,
-                  onTap: () {
-                    Get.to(() => const ShippingAddress());
-                  },
-                )
-              ],
+                        ],
+                      ),
+                    );
+                  }),
+                  SizedBox(height: 16.h),
+                  CustomButton(
+                    text: "Thêm địa chỉ ngay",
+                    btnHeight: 40.h,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Get.to(() => const ShippingAddress());
+                    },
+                  ),
+                  SizedBox(height: 12.h),
+                ],
+              ),
             ),
           ),
         );

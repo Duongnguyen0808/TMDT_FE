@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 
 class ServiceCenterPage extends StatelessWidget {
   const ServiceCenterPage({super.key});
@@ -8,8 +7,23 @@ class ServiceCenterPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Trung tâm dịch vụ'),
-        leading: const Icon(AntDesign.customerservice),
+        backgroundColor: const Color(0xFF30b9b2),
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+          ),
+        ),
+        title: const Text(
+          'Trung tâm dịch vụ',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
       body: const Center(
         child: Text(

@@ -7,7 +7,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 
-FetchHook useFetchOrders(String orderStatus, String paymentStatus) {
+FetchHook useFetchOrders(String orderStatus, [String? paymentStatus]) {
   final box = GetStorage();
   final orders = useState<List<ClientOrders>>([]);
   final isLoading = useState<bool>(false);
@@ -24,8 +24,13 @@ FetchHook useFetchOrders(String orderStatus, String paymentStatus) {
     isLoading.value = true;
 
     try {
-      Uri url = Uri.parse(
-          '$appBaseUrl/api/orders?orderStatus=$orderStatus&paymentStatus=$paymentStatus');
+      // Chỉ thêm paymentStatus nếu được cung cấp
+      String queryString = 'orderStatus=$orderStatus';
+      if (paymentStatus != null && paymentStatus.isNotEmpty) {
+        queryString += '&paymentStatus=$paymentStatus';
+      }
+
+      Uri url = Uri.parse('$appBaseUrl/api/orders?$queryString');
       final response = await http.get(url, headers: headers);
 
       if (response.statusCode == 200) {

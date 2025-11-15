@@ -3,10 +3,8 @@ import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/hooks/fetch_orders.dart';
 import 'package:appliances_flutter/models/client_orders.dart';
 import 'package:appliances_flutter/views/orders/widget/client_order_title.dart';
-import 'package:appliances_flutter/views/orders/widget/order_item_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-
 
 class Cancelled extends HookWidget {
   const Cancelled({super.key});
@@ -27,13 +25,18 @@ class Cancelled extends HookWidget {
       child: ListView.builder(
           itemCount: orders.length,
           itemBuilder: (context, i) {
-            final item = orders[i].orderItems.isNotEmpty
-                ? orders[i].orderItems[0]
-                : null;
-            if (item == null) {
+            final order = orders[i];
+            if (order.orderItems.isEmpty) {
               return const SizedBox.shrink();
             }
-            return ClientOrderTile(appliances: toOrderModelItem(item));
+            final item = order.orderItems[0];
+            if (item.appliancesId.imageUrl.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return ClientOrderTile(
+              appliances: item,
+              fullOrder: order,
+            );
           }),
     );
   }

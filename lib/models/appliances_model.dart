@@ -22,11 +22,12 @@ class AppliancesModel {
   final bool isAvailable;
   final String store;
   final double rating;
-  final String ratingCount;
+  final int ratingCount;
   final String description;
   final double price;
   final List<Additive> additives;
   final List<String> imageUrl;
+  final double discount;
 
   AppliancesModel({
     required this.id,
@@ -44,6 +45,7 @@ class AppliancesModel {
     required this.price,
     required this.additives,
     required this.imageUrl,
+    required this.discount,
   });
 
   factory AppliancesModel.fromJson(Map<String, dynamic> json) =>
@@ -57,13 +59,20 @@ class AppliancesModel {
         code: json["code"],
         isAvailable: json["isAvailable"],
         store: json["store"],
-        rating: json["rating"]?.toDouble(),
-        ratingCount: json["ratingCount"],
-        description: json["description"],
-        price: json["price"]?.toDouble(),
+        rating: json["rating"]?.toDouble() ?? 3.0,
+        ratingCount: json["ratingCount"] is int
+            ? json["ratingCount"]
+            : int.tryParse(json["ratingCount"].toString()) ?? 0,
+        description: json["description"] ?? "",
+        price: (json["price"] is int)
+            ? (json["price"] as int).toDouble()
+            : (json["price"]?.toDouble() ?? 0.0),
         additives: List<Additive>.from(
             json["additives"].map((x) => Additive.fromJson(x))),
         imageUrl: List<String>.from(json["imageUrl"].map((x) => x)),
+        discount: (json["discount"] is int)
+            ? (json["discount"] as int).toDouble()
+            : (json["discount"]?.toDouble() ?? 0.0),
       );
 
   Map<String, dynamic> toJson() => {
@@ -82,6 +91,7 @@ class AppliancesModel {
         "price": price,
         "additives": List<dynamic>.from(additives.map((x) => x.toJson())),
         "imageUrl": List<dynamic>.from(imageUrl.map((x) => x)),
+        "discount": discount,
       };
 }
 

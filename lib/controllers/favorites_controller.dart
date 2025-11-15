@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:appliances_flutter/models/appliances_model.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';

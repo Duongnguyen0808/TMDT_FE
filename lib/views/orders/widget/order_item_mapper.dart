@@ -4,11 +4,11 @@ import 'package:appliances_flutter/models/order_model.dart' as model;
 model.OrderItem toOrderModelItem(client.OrderItem item) {
   return model.OrderItem(
     appliancesId: model.AppliancesId(
-      id: item.foodId.id,
-      title: item.foodId.title,
-      rating: item.foodId.rating,
-      imageUrl: item.foodId.imageUrl,
-      time: item.foodId.time,
+      id: item.appliancesId.id,
+      title: item.appliancesId.title,
+      rating: item.appliancesId.rating,
+      imageUrl: item.appliancesId.imageUrl,
+      time: item.appliancesId.time,
     ),
     quantity: item.quantity,
     price: item.price,

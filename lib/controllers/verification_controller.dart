@@ -11,6 +11,7 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:appliances_flutter/controllers/cart_controller.dart';
 
 class VerificationController extends GetxController {
   final box = GetStorage();
@@ -98,6 +99,12 @@ class VerificationController extends GetxController {
             colorText: kLightWhite,
             backgroundColor: kPrimary,
             icon: const Icon(Ionicons.star_outline));
+
+        // Đồng bộ giỏ khách lên server sau khi xác minh thành công
+        try {
+          final cartController = Get.put(CartController());
+          await cartController.mergeGuestCartToServer();
+        } catch (_) {}
 
         Get.offAll(() => MainScreen());
       } else {

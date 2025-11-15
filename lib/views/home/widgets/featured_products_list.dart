@@ -16,7 +16,8 @@ class FeaturedProductsList extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hookResults = useFetchStore("41007428");
+    // Lấy tất cả cửa hàng (không lọc theo code)
+    final hookResults = useFetchStore("");
     List<StoreModel>? stores = hookResults.data;
     final isLoading = hookResults.isLoading;
 

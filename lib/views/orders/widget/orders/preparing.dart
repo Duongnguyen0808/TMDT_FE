@@ -5,14 +5,13 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/hooks/fetch_orders.dart';
 import 'package:appliances_flutter/models/client_orders.dart';
-import 'package:appliances_flutter/views/orders/widget/order_item_mapper.dart';
 
 class Preparing extends HookWidget {
   const Preparing({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final hookResults = useFetchOrders('Placed', 'Completed');
+    final hookResults = useFetchOrders('Preparing');
 
     List<ClientOrders> orders = hookResults.data;
     final isLoading = hookResults.isLoading;
@@ -26,13 +25,21 @@ class Preparing extends HookWidget {
       child: ListView.builder(
           itemCount: orders.length,
           itemBuilder: (context, i) {
-            final item = orders[i].orderItems.isNotEmpty
-                ? orders[i].orderItems[0]
-                : null;
-            if (item == null) {
+            final order = orders[i];
+            if (order.orderItems.isEmpty) {
               return const SizedBox.shrink();
             }
-            return ClientOrderTile(appliances: toOrderModelItem(item));
+            final item = order.orderItems[0];
+            if (item.appliancesId.imageUrl.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return ClientOrderTile(
+              appliances: item,
+              fullOrder: order,
+              onCancelled: hookResults.refetch != null
+                  ? () => hookResults.refetch!()
+                  : null,
+            );
           }),
     );
   }

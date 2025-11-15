@@ -8,7 +8,6 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:appliances_flutter/utils/currency.dart';
-
 import 'package:get/get.dart';
 
 class CartTile extends StatelessWidget {
@@ -21,143 +20,218 @@ class CartTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(CartController());
+
     return GestureDetector(
-        onTap: () {
-          // Get.to(() => FoodPage(food: food));
-        },
-        child: Stack(
-          clipBehavior: Clip.hardEdge,
+      onTap: () {
+        // Có thể thêm điều hướng đến trang chi tiết sản phẩm nếu cần
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: 10.h),
+        padding: EdgeInsets.all(8.r),
+        decoration: BoxDecoration(
+          color: color ?? kOffWhite,
+          borderRadius: BorderRadius.circular(12.r),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            )
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              margin: EdgeInsets.only(bottom: 8.h),
-              height: 70.h,
-              width: width,
-              decoration: BoxDecoration(
-                  color: color ?? kOffWhite,
-                  borderRadius: BorderRadius.circular(9.r)),
-              child: Container(
-                padding: EdgeInsets.all(4.r),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.all(Radius.circular(12.r)),
-                      child: Stack(
-                        children: [
-                          SizedBox(
-                            width: 70.w,
-                            height: 70.h,
-                            child: Image.network(
-                              cart.productId.imageUrl[0],
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            child: Container(
-                              padding: EdgeInsets.only(left: 6.w, bottom: 2.h),
-                              color: kGray.withOpacity(0.6),
-                              height: 16.h,
-                              width: width,
-                              child: RatingBarIndicator(
-                                rating: 5,
-                                itemCount: 5,
-                                itemBuilder: (context, i) => const Icon(
-                                  Icons.star,
-                                  color: kSecondary,
-                                ),
-                                itemSize: 15.h,
-                              ),
-                            ),
-                          ),
-                        ],
+            /// Ảnh sản phẩm + đánh giá
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12.r),
+              child: Stack(
+                alignment: Alignment.bottomCenter,
+                children: [
+                  Image.network(
+                    (cart.productId.imageUrl.isNotEmpty
+                        ? cart.productId.imageUrl[0]
+                        : ''),
+                    width: 75.w,
+                    height: 75.w,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 75.w,
+                        height: 75.w,
+                        color: kGrayLight,
+                        child: Icon(Icons.image_not_supported, size: 30.w),
+                      );
+                    },
+                  ),
+                  Container(
+                    width: 75.w,
+                    height: 18.h,
+                    color: Colors.black.withOpacity(0.4),
+                    child: Center(
+                      child: RatingBarIndicator(
+                        rating: 5,
+                        itemCount: 5,
+                        itemSize: 12.h,
+                        unratedColor: Colors.white24,
+                        itemBuilder: (context, _) => const Icon(
+                          Icons.star,
+                          color: kSecondary,
+                        ),
                       ),
                     ),
-                    SizedBox(width: 10.w),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ReusableText(
-                          text: cart.productId.title,
-                          style: appStyle(11, kDark, FontWeight.w400),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 10.w),
+
+            /// Nội dung bên phải
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  /// Tên sản phẩm
+                  ReusableText(
+                    text: cart.productId.title,
+                    style: appStyle(14, kDark, FontWeight.w600),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4.h),
+
+                  /// Tag phụ gia / Additives
+                  if (cart.additives.isNotEmpty)
+                    Wrap(
+                      spacing: 4.w,
+                      runSpacing: 2.h,
+                      children: cart.additives
+                          .map((additive) => Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 6.w, vertical: 2.h),
+                                decoration: BoxDecoration(
+                                  color: kSecondaryLight,
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                                child: ReusableText(
+                                  text: additive,
+                                  style: appStyle(9, kGray, FontWeight.w400),
+                                ),
+                              ))
+                          .toList(),
+                    ),
+
+                  SizedBox(height: 8.h),
+
+                  /// Hàng nút +, - và số lượng
+                  Row(
+                    children: [
+                      /// Giảm
+                      GestureDetector(
+                        onTap: () {
+                          controller.decrementItem(
+                            cartItemId: cart.id,
+                            refetch: refetch ?? () {},
+                          );
+                        },
+                        child: Container(
+                          width: 24.w,
+                          height: 24.h,
+                          decoration: BoxDecoration(
+                            color: kGray,
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: const Icon(Icons.remove,
+                              color: kLightWhite, size: 16),
                         ),
-                        // ReusableText(
-                        //   text: "Delivery time: ${cart.productId.t}",
-                        //   style: appStyle(11, kGray, FontWeight.w400),
-                        // ),
-                        SizedBox(
-                          width: width * 0.7,
-                          height: 15.h,
-                          child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: cart.additives.length,
-                              itemBuilder: (context, i) {
-                                var additive = cart.additives[i];
-                                return Container(
-                                  margin: EdgeInsets.only(right: 5.w),
-                                  decoration: BoxDecoration(
-                                    color: kSecondaryLight,
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(9.r),
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(2.h),
-                                      child: ReusableText(
-                                          text: additive,
-                                          style: appStyle(
-                                              8, kGray, FontWeight.w400)),
-                                    ),
-                                  ),
-                                );
-                              }),
-                        )
-                      ],
-                    )
-                  ],
-                ),
+                      ),
+
+                      SizedBox(width: 8.w),
+                      ReusableText(
+                        text: 'x${cart.quantity}',
+                        style: appStyle(12, kDark, FontWeight.bold),
+                      ),
+                      SizedBox(width: 8.w),
+
+                      /// Tăng
+                      GestureDetector(
+                        onTap: () {
+                          final double unitPrice = cart.quantity > 0
+                              ? (cart.totalPrice / cart.quantity)
+                              : cart.totalPrice;
+                          controller.incrementItem(
+                            productId: cart.productId.id,
+                            additives: cart.additives,
+                            unitPrice: unitPrice,
+                            refetch: refetch ?? () {},
+                          );
+                        },
+                        child: Container(
+                          width: 24.w,
+                          height: 24.h,
+                          decoration: BoxDecoration(
+                            color: kPrimary,
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: const Icon(Icons.add,
+                              color: kLightWhite, size: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            Positioned(
-              right: 5.w,
-              top: 6.h,
-              child: Container(
-                width: 60.w,
-                height: 19.h,
-                decoration: BoxDecoration(
-                    color: kPrimary, borderRadius: BorderRadius.circular(10.r)),
-                child: Center(
-                  child: ReusableText(
-                      text: usdToVndText(cart.totalPrice),
-                      style: appStyle(12, kLightWhite, FontWeight.bold)),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 75.w,
-              top: 6.h,
-              child: GestureDetector(
-                onTap: () {
-                  controller.removeFrom(cart.id, refetch!);
-                },
-                child: Container(
-                  width: 19.w,
-                  height: 19.h,
-                  decoration: BoxDecoration(
-                      color: kRed, borderRadius: BorderRadius.circular(10.r)),
-                  child: Center(
-                    child: Icon(
-                      MaterialCommunityIcons.trash_can,
-                      size: 15.h,
-                      color: kLightWhite,
+
+            /// Nút xóa + Giá tiền
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    controller.removeFrom(cart.id, refetch ?? () {});
+                  },
+                  child: Container(
+                    width: 24.w,
+                    height: 24.h,
+                    decoration: BoxDecoration(
+                      color: kRed,
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        MaterialCommunityIcons.trash_can,
+                        size: 14,
+                        color: kLightWhite,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            )
+                SizedBox(height: 8.h),
+                Container(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: kPrimary,
+                    borderRadius: BorderRadius.circular(12.r),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      )
+                    ],
+                  ),
+                  child: ReusableText(
+                    text: usdToVndText(cart.totalPrice),
+                    style: appStyle(12, kLightWhite, FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
           ],
-        ));
+        ),
+      ),
+    );
   }
 }

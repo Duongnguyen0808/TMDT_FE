@@ -12,6 +12,7 @@ class CategoryAppliancesList extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Lấy sản phẩm theo category, nếu không có sẽ fallback lấy tất cả
     final hookResult = useFetchAppliancesByCategory("41007428");
     List<AppliancesModel>? appliancess = hookResult.data;
     final isLoading = hookResult.isLoading;

@@ -4,6 +4,20 @@
 
 import 'dart:convert';
 
+// Helpers to safely parse dynamic values that may be numbers or strings
+double _parseDouble(dynamic v, [double fallback = 0.0]) {
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v) ?? fallback;
+  return fallback;
+}
+
+int _parseInt(dynamic v, [int fallback = 0]) {
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? fallback;
+  return fallback;
+}
+
 // Supports both: [{...}, {...}] and { "cart": [{...}, {...}] }
 List<CartResponse> cartResponseFromJson(String str) {
   final decoded = json.decode(str);
@@ -31,13 +45,38 @@ class CartResponse {
     required this.quantity,
   });
 
-  factory CartResponse.fromJson(Map<String, dynamic> json) => CartResponse(
-        id: json["_id"],
-        productId: ProductId.fromJson(json["productId"]),
-        additives: List<String>.from(json["additives"].map((x) => x)),
-        totalPrice: json["totalPrice"]?.toDouble(),
-        quantity: json["quantity"],
+  factory CartResponse.fromJson(Map<String, dynamic> json) {
+    final dynamic pidRaw = json["productId"];
+    final ProductId product;
+    if (pidRaw is Map<String, dynamic>) {
+      product = ProductId.fromJson(pidRaw);
+    } else {
+      // Legacy/guest items may store only the id as a string
+      final dynamic storeRaw = json["store"];
+      final Map<String, dynamic> storeMap =
+          storeRaw is Map ? Map<String, dynamic>.from(storeRaw) : {};
+      final dynamic imgRaw = json["imageUrl"];
+      final List<String> images = imgRaw is List
+          ? List<String>.from(imgRaw.map((x) => x.toString()))
+          : <String>[];
+      product = ProductId(
+        id: (pidRaw ?? "").toString(),
+        title: (json["title"] ?? json["productTitle"] ?? "").toString(),
+        store: CartStore.fromJson(storeMap),
+        rating: _parseDouble(json["rating"]),
+        ratingCount: (json["ratingCount"] ?? "0").toString(),
+        imageUrl: images,
       );
+    }
+
+    return CartResponse(
+      id: (json["_id"] ?? json["id"] ?? "").toString(),
+      productId: product,
+      additives: List<String>.from((json["additives"] ?? []).map((x) => x.toString())),
+      totalPrice: _parseDouble(json["totalPrice"]),
+      quantity: _parseInt(json["quantity"]),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         "_id": id,
@@ -66,12 +105,19 @@ class ProductId {
   });
 
   factory ProductId.fromJson(Map<String, dynamic> json) => ProductId(
-        id: json["_id"],
-        title: json["title"],
-        store: CartStore.fromJson(json["store"]),
-        rating: json["rating"]?.toDouble(),
-        ratingCount: json["ratingCount"],
-        imageUrl: List<String>.from(json["imageUrl"].map((x) => x)),
+        id: (json["_id"] ?? json["id"] ?? "").toString(),
+        title: (json["title"] ?? "").toString(),
+        store: CartStore.fromJson(
+          json["store"] is Map
+              ? Map<String, dynamic>.from(json["store"])
+              : <String, dynamic>{},
+        ),
+        rating: _parseDouble(json["rating"]),
+        ratingCount: (json["ratingCount"] ?? "0").toString(),
+        imageUrl: (json["imageUrl"] is List)
+            ? List<String>.from((json["imageUrl"] as List)
+                .map((x) => x.toString()))
+            : <String>[],
       );
 
   Map<String, dynamic> toJson() => {
@@ -95,11 +141,21 @@ class CartStore {
     required this.coords,
   });
 
-  factory CartStore.fromJson(Map<String, dynamic> json) => CartStore(
-        id: (json["_id"] ?? json["id"]).toString(),
-        time: json["time"] ?? "",
-        coords: CartCoords.fromJson(json["coords"] ?? {}),
-      );
+  factory CartStore.fromJson(Map<String, dynamic> json) {
+    final dynamic coordsRaw = json["coords"];
+    final Map<String, dynamic> coordsMap = coordsRaw is Map
+        ? Map<String, dynamic>.from(coordsRaw)
+        : <String, dynamic>{};
+    // Ensure we do NOT stringify null -> "null". Prefer empty string if missing.
+    final dynamic idRaw = json["_id"]; // Mongoose usually includes _id by default
+    final String storeId = idRaw == null ? "" : idRaw.toString();
+
+    return CartStore(
+      id: storeId,
+      time: (json["time"] ?? "").toString(),
+      coords: CartCoords.fromJson(coordsMap),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         "_id": id,
@@ -129,12 +185,12 @@ class CartCoords {
 
   factory CartCoords.fromJson(Map<String, dynamic> json) => CartCoords(
         id: (json["id"] ?? json["_id"] ?? "").toString(),
-        latitude: (json["latitude"] ?? 0.0).toDouble(),
-        longitude: (json["longitude"] ?? 0.0).toDouble(),
+        latitude: _parseDouble(json["latitude"]),
+        longitude: _parseDouble(json["longitude"]),
         address: json["address"] ?? "",
         title: json["title"] ?? "",
-        latitudeDelta: (json["latitudeDelta"] ?? 0.0).toDouble(),
-        longitudeDelta: (json["longitudeDelta"] ?? 0.0).toDouble(),
+        latitudeDelta: _parseDouble(json["latitudeDelta"]),
+        longitudeDelta: _parseDouble(json["longitudeDelta"]),
       );
 
   Map<String, dynamic> toJson() => {

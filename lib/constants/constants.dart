@@ -19,11 +19,13 @@ const kOffWhite = Color(0xffF3F4F8);
 double height = 825.h;
 double width = 375.w;
 
-const String appBaseUrl = "http://10.0.2.2:6013";
-// const String appBaseUrl = "http://192.168.1.5:6013";
+// Base URL tuỳ môi trường: Web dùng localhost, Android emulator dùng IP mạng LAN
+// Sử dụng đúng PORT từ backend (.env: PORT=6013)
+// final String appBaseUrl =
+//     kIsWeb ? "http://localhost:6013" : "http://192.168.1.5:6013";
 
-// Base URL for API calls
-const String kBaseUrl = "http://10.0.2.2:3000";
+// Deprecated: kBaseUrl (giữ lại nếu nơi khác tham chiếu)
+const String appBaseUrl = "http://10.0.2.2:6013";
 
 // MapBox API Key (you need to replace this with your actual MapBox API key)
 const String kMapBoxApiKey =
@@ -36,18 +38,16 @@ final List<String> verificationReasons = [
   'Ưu đãi độc quyền: Cập nhật thông tin về các ưu đãi và chương trình khuyến mãi đặc biệt.'
 ];
 
-// Danh sách tab trạng thái đơn hàng
+// Danh sách tab trạng thái đơn hàng (3 trạng thái chính)
 const List<String> orderList = [
-  'Pending',
-  'Preparing',
-  'Delivering',
-  'Delivered',
-  'Cancelled',
+  'Chờ xử lý',
+  'Đang chuẩn bị',
+  'Đã giao',
 ];
 List<String> reasonsToAddAddress = [
-  "Ensures that food orders are delivered accurately to the customer’s location.",
-  "Allows users to check if the delivery service is available in their area.",
-  "Provides a personalized experience by showing nearby restaurants, estimated delivery times, and special offers.",
-  "Streamlines the checkout process by saving addresses for quicker order placement.",
-  "Enables management of multiple addresses (e.g., home, work) for easy switching.",
+  "Đảm bảo đơn hàng được giao chính xác tới vị trí của bạn.",
+  "Cho phép kiểm tra dịch vụ giao hàng có sẵn trong khu vực.",
+  "Trải nghiệm cá nhân hoá: hiển thị cửa hàng gần bạn, thời gian dự kiến và ưu đãi.",
+  "Tối ưu thanh toán: lưu địa chỉ để đặt hàng nhanh hơn.",
+  "Quản lý nhiều địa chỉ (nhà, công ty) để chuyển đổi thuận tiện.",
 ];

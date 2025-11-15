@@ -2,6 +2,7 @@ import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/back_ground_container.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/common/shimmers/custom_button.dart';
+import 'package:appliances_flutter/common/voucher_list_sheet.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/controllers/orders_controller.dart';
 import 'package:appliances_flutter/hooks/fetch_default.dart';
@@ -11,7 +12,9 @@ import 'package:appliances_flutter/models/distance_time.dart';
 import 'package:appliances_flutter/models/order_model.dart' as order_model;
 import 'package:appliances_flutter/models/order_request.dart';
 import 'package:appliances_flutter/models/store_model.dart';
+import 'package:appliances_flutter/models/voucher.dart';
 import 'package:appliances_flutter/services/distance.dart';
+import 'package:appliances_flutter/services/vietmap_distance.dart';
 import 'package:appliances_flutter/views/orders/payment.dart';
 import 'package:appliances_flutter/views/orders/widget/order_title.dart';
 import 'package:appliances_flutter/views/store/widget/row_text.dart';
@@ -22,7 +25,6 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:appliances_flutter/utils/currency.dart';
 import 'package:appliances_flutter/views/auth/login_redirect.dart';
-import 'package:appliances_flutter/hooks/fetch_address.dart';
 import 'package:appliances_flutter/views/profile/shipping_address.dart';
 
 class OrderPage extends HookWidget {
@@ -42,21 +44,50 @@ class OrderPage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(OrdersController());
+    final selectedVoucher = useState<Voucher?>(null);
+    final discount = useState<double>(0.0);
+    final paymentMethod = useState<String>('COD'); // Default to COD
+    final distanceData = useState<DistanceTime?>(null);
     final hook = useFetchDefault(context);
     final AddressResponse? selectedAddress = hook.data ?? address;
     final bool hasStore = store != null;
-    DistanceTime data = hasStore
-        ? Distance().calculateDistanceTimePrice(
-            store!.coords.latitude,
-            store!.coords.longitude,
-            selectedAddress?.latitude ?? 0.0,
-            selectedAddress?.longitude ?? 0.0,
-            10,
-            2,
-          )
-        : DistanceTime(price: 0.0, distance: 0.0, time: 0.0);
 
-    double totalPrice = item.price + data.price;
+    // Tính khoảng cách bằng VietMap API khi có đủ thông tin
+    useEffect(() {
+      if (hasStore && selectedAddress != null) {
+        VietMapDistance()
+            .calculateRealDistance(
+          lat1: store!.coords.latitude,
+          lon1: store!.coords.longitude,
+          lat2: selectedAddress.latitude,
+          lon2: selectedAddress.longitude,
+          pricePerKm: 2,
+        )
+            .then((result) {
+          if (result != null) {
+            distanceData.value = result;
+          }
+        });
+      }
+      return null;
+    }, [hasStore, selectedAddress]);
+
+    // Fallback về Haversine nếu VietMap chưa load xong
+    DistanceTime data = distanceData.value ??
+        (hasStore
+            ? Distance().calculateDistanceTimePrice(
+                store!.coords.latitude,
+                store!.coords.longitude,
+                selectedAddress?.latitude ?? 0.0,
+                selectedAddress?.longitude ?? 0.0,
+                10,
+                2,
+              )
+            : DistanceTime(price: 0.0, distance: 0.0, time: 0.0));
+
+    // Phản ánh đúng tổng theo số lượng: tổng đơn = đơn giá * số lượng
+    final double orderTotal = item.price * item.quantity;
+    final double totalPrice = (orderTotal - discount.value) + data.price;
     double width = MediaQuery.of(context).size.width;
 
     return Obx(
@@ -124,13 +155,23 @@ class OrderPage extends HookWidget {
                               second: "${data.distance.toStringAsFixed(2)} km",
                             ),
                             RowText(
+                              first: "Thời gian ước tính",
+                              second:
+                                  "${(data.time * 60).toStringAsFixed(0)} phút",
+                            ),
+                            RowText(
                               first: "Phí từ cửa hàng",
                               second: usdToVndText(data.price),
                             ),
                             RowText(
                               first: "Tổng đơn hàng",
-                              second: usdToVndText(item.price),
+                              second: usdToVndText(orderTotal),
                             ),
+                            if (discount.value > 0)
+                              RowText(
+                                first: "Giảm giá",
+                                second: "- ${usdToVndText(discount.value)}",
+                              ),
                             RowText(
                               first: "Tổng cộng",
                               second: usdToVndText(totalPrice),
@@ -161,6 +202,171 @@ class OrderPage extends HookWidget {
                                   ),
                                 );
                               }).toList(),
+                            ),
+                            SizedBox(height: 12.h),
+
+                            // Voucher Section
+                            ReusableText(
+                              text: "Voucher giảm giá",
+                              style: appStyle(20, kGray, FontWeight.bold),
+                            ),
+                            SizedBox(height: 8.h),
+                            InkWell(
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (context) => VoucherListSheet(
+                                    orderTotal: orderTotal,
+                                    storeId: store?.id,
+                                    onVoucherSelected: (voucher) {
+                                      selectedVoucher.value = voucher;
+                                      if (voucher != null) {
+                                        discount.value = voucher
+                                            .calculateDiscount(orderTotal);
+                                      } else {
+                                        discount.value = 0.0;
+                                      }
+                                    },
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12.w, vertical: 12.h),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: kGrayLight),
+                                  borderRadius: BorderRadius.circular(10.r),
+                                  color: selectedVoucher.value != null
+                                      ? kPrimaryLight.withOpacity(0.1)
+                                      : kWhite,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.local_offer,
+                                      color: selectedVoucher.value != null
+                                          ? kPrimary
+                                          : kGray,
+                                      size: 24.sp,
+                                    ),
+                                    SizedBox(width: 12.w),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            selectedVoucher.value != null
+                                                ? selectedVoucher.value!.title
+                                                : 'Chọn hoặc nhập mã voucher',
+                                            style: appStyle(
+                                              14,
+                                              selectedVoucher.value != null
+                                                  ? kDark
+                                                  : kGray,
+                                              FontWeight.w500,
+                                            ),
+                                          ),
+                                          if (selectedVoucher.value != null)
+                                            Text(
+                                              selectedVoucher.value!.code,
+                                              style: appStyle(12, kPrimary,
+                                                  FontWeight.w600),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (selectedVoucher.value != null)
+                                      Text(
+                                        '-${usdToVndText(discount.value)}',
+                                        style: appStyle(
+                                            14, kSecondary, FontWeight.bold),
+                                      ),
+                                    SizedBox(width: 8.w),
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: kGray,
+                                      size: 16.sp,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: 20.h),
+
+                            // Payment Method Section
+                            ReusableText(
+                              text: "Phương thức thanh toán",
+                              style: appStyle(20, kGray, FontWeight.bold),
+                            ),
+                            SizedBox(height: 8.h),
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: kGrayLight),
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                              child: Column(
+                                children: [
+                                  RadioListTile<String>(
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 12.w, vertical: 0),
+                                    title: Row(
+                                      children: [
+                                        Icon(Icons.money,
+                                            color: kPrimary, size: 20.sp),
+                                        SizedBox(width: 8.w),
+                                        Expanded(
+                                          child: Text(
+                                            'Thanh toán khi nhận hàng (COD)',
+                                            style: appStyle(
+                                                13, kDark, FontWeight.w500),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    value: 'COD',
+                                    groupValue: paymentMethod.value,
+                                    activeColor: kPrimary,
+                                    onChanged: (value) {
+                                      if (value != null) {
+                                        paymentMethod.value = value;
+                                      }
+                                    },
+                                  ),
+                                  Divider(height: 1, color: kGrayLight),
+                                  RadioListTile<String>(
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 12.w, vertical: 0),
+                                    title: Row(
+                                      children: [
+                                        Icon(Icons.payment,
+                                            color: kSecondary, size: 20.sp),
+                                        SizedBox(width: 8.w),
+                                        Expanded(
+                                          child: Text(
+                                            'Thanh toán VNPay',
+                                            style: appStyle(
+                                                13, kDark, FontWeight.w500),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    value: 'VNPay',
+                                    groupValue: paymentMethod.value,
+                                    activeColor: kPrimary,
+                                    onChanged: (value) {
+                                      if (value != null) {
+                                        paymentMethod.value = value;
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -207,49 +413,29 @@ class OrderPage extends HookWidget {
                             additives: item.additives,
                             instructions: item.instructions,
                           );
-                          // Hiển thị chọn phương thức thanh toán
-                          final method = await showModalBottomSheet<String>(
-                            context: context,
-                            builder: (ctx) {
-                              return SafeArea(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    ListTile(
-                                      leading: const Icon(Icons.payment),
-                                      title: const Text('Thanh toán VNPay'),
-                                      onTap: () => Navigator.pop(ctx, 'VNPay'),
-                                    ),
-                                    ListTile(
-                                      leading: const Icon(Icons.money),
-                                      title: const Text('Thanh toán COD'),
-                                      onTap: () => Navigator.pop(ctx, 'COD'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
 
-                          if (method == null) return;
+                          // Use the selected payment method directly
+                          final method = paymentMethod.value;
 
                           // Lưu thông tin COD để hiển thị trang tóm tắt
                           if (method == 'COD') {
                             controller.setCodInfo(
                               productTitle: appliances.title,
-                              addressLine: selectedAddress!.addressLine1,
-                              totalPrice: totalPrice,
+                              addressLine: selectedAddress.addressLine1,
+                              totalPrice:
+                                  (orderTotal - discount.value) + data.price,
                               quantity: item.quantity,
                             );
                           }
 
                           final order = OrderRequest(
-                            userId: selectedAddress!.userId,
+                            userId: selectedAddress.userId,
                             orderItems: [requestItem],
-                            orderTotal: item.price,
-                            deliveryFee: data.price.toStringAsFixed(2),
-                            grandTotal: totalPrice,
-                            deliveryAddress: selectedAddress!.id,
+                            orderTotal: orderTotal,
+                            deliveryFee: data.price,
+                            grandTotal:
+                                (orderTotal - discount.value) + data.price,
+                            deliveryAddress: selectedAddress.id,
                             storeAddress: store!.coords.address,
                             storeId: store!.id,
                             storeCoords: [
@@ -257,10 +443,13 @@ class OrderPage extends HookWidget {
                               store!.coords.longitude,
                             ],
                             recipientCoords: [
-                              selectedAddress!.latitude ?? 0.0,
-                              selectedAddress!.longitude ?? 0.0,
+                              selectedAddress.latitude,
+                              selectedAddress.longitude,
                             ],
                             paymentMethod: method,
+                            promoCode: selectedVoucher.value?.code,
+                            discountAmount:
+                                discount.value > 0 ? discount.value : null,
                           );
 
                           final orderData = orderRequestToJson(order);

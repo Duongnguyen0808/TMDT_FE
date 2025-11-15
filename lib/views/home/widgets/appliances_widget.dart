@@ -62,7 +62,7 @@ class AppliancesWidget extends StatelessWidget {
                             text: title,
                             style: appStyle(12, kDark, FontWeight.w500)),
                         ReusableText(
-                            text: formatVND((double.tryParse(price) ?? 0) * usdToVndRate),
+                            text: formatVND(double.tryParse(price) ?? 0),
                             style: appStyle(12, kPrimary, FontWeight.w600)),
                       ],
                     ),

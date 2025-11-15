@@ -19,10 +19,9 @@ import 'package:appliances_flutter/models/login_response.dart';
 import 'package:appliances_flutter/models/store_model.dart';
 import 'package:appliances_flutter/views/auth/login_page.dart';
 import 'package:appliances_flutter/views/auth/phone_verification_page.dart';
-import 'package:appliances_flutter/views/auth/login_redirect.dart';
 import 'package:appliances_flutter/models/order_model.dart' as order_model;
 import 'package:appliances_flutter/views/orders/order_page.dart';
-import 'package:appliances_flutter/views/profile/shipping_address.dart';
+import 'package:appliances_flutter/views/store/rating_page.dart';
 import 'package:appliances_flutter/views/store/store_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -76,23 +75,21 @@ class _AppliancesPageState extends State<AppliancesPage>
     final cartController = Get.put(CartController());
     final favController = Get.put(FavoritesController());
     final box = GetStorage();
-    var addressTriger = box.read('defaultAddress');
     LoginResponse? user;
-    // Fetch the store by id to get a single StoreModel
-    final data = useFetchDefault(context);
-    AddressResponse? address = data.data;
+    // Chỉ lấy địa chỉ mặc định khi đã đăng nhập
+    final String? token = box.read('token');
+    final bool isLoggedIn = token != null && token.isNotEmpty;
+    final defaultHook = isLoggedIn ? useFetchDefault(context) : null;
+    AddressResponse? address = isLoggedIn ? defaultHook!.data : null;
+    // Check xem có địa chỉ nào không (bất kể default hay không)
+    final bool hasAddress = address != null;
     final hookResult = useFetchStoreById(widget.appliances.store);
     StoreModel? store = hookResult.data;
     final loginController = Get.put(LoginController());
     user = loginController.getUserInfo();
 
-    // Nếu chưa đăng nhập, chuyển sang màn hình LoginRedirect thay vì yêu cầu địa chỉ
-    if (user == null) {
-      return const LoginRedirect();
-    }
-
-    // Show loading while fetching address
-    if (data.isLoading) {
+    // Show loading while fetching address (nếu có)
+    if (isLoggedIn && defaultHook!.isLoading) {
       return Scaffold(
         body: Center(
           child: CircularProgressIndicator(color: kPrimary),
@@ -170,9 +167,11 @@ class _AppliancesPageState extends State<AppliancesPage>
                   top: 40.h,
                   right: 12.w,
                   child: GestureDetector(
-                    onTap: () => favController.toggleFavorite(widget.appliances),
+                    onTap: () =>
+                        favController.toggleFavorite(widget.appliances),
                     child: Obx(() {
-                      final isFav = favController.isFavorite(widget.appliances.id);
+                      final isFav =
+                          favController.isFavorite(widget.appliances.id);
                       return CircleAvatar(
                         radius: 16.r,
                         backgroundColor: isFav ? kRed : kLightWhite,
@@ -195,7 +194,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                           ));
                     },
                     btnWidth: 120.w,
-                    text: "Open Store",
+                    text: "Xem cửa hàng",
                   ),
                 ),
               ],
@@ -212,9 +211,56 @@ class _AppliancesPageState extends State<AppliancesPage>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    ReusableText(
-                        text: widget.appliances.title,
-                        style: appStyle(18, kDark, FontWeight.w600)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ReusableText(
+                              text: widget.appliances.title,
+                              style: appStyle(18, kDark, FontWeight.w600)),
+                          SizedBox(height: 4.h),
+                          Row(
+                            children: [
+                              Icon(Icons.star, color: kSecondary, size: 16.h),
+                              SizedBox(width: 4.w),
+                              ReusableText(
+                                text:
+                                    widget.appliances.rating.toStringAsFixed(1),
+                                style: appStyle(14, kDark, FontWeight.w500),
+                              ),
+                              SizedBox(width: 8.w),
+                              GestureDetector(
+                                onTap: () async {
+                                  final result = await Get.to(
+                                    () => RatingPage(
+                                      productId: widget.appliances.id,
+                                      ratingType: 'Appliances',
+                                    ),
+                                  );
+                                  if (result == true) {
+                                    // Refresh trang nếu đánh giá thành công
+                                    setState(() {});
+                                  }
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w, vertical: 2.h),
+                                  decoration: BoxDecoration(
+                                    color: kSecondary,
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                  child: ReusableText(
+                                    text: "Đánh giá",
+                                    style: appStyle(
+                                        11, kLightWhite, FontWeight.w500),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                     Obx(
                       () => ReusableText(
                           text: usdToVndText((widget.appliances.price +
@@ -264,7 +310,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                   height: 15.h,
                 ),
                 ReusableText(
-                    text: "Additives and Toppings",
+                    text: "Tuỳ chọn thêm",
                     style: appStyle(18, kDark, FontWeight.w600)),
                 SizedBox(
                   height: 10.h,
@@ -313,7 +359,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ReusableText(
-                        text: "Qauntity",
+                        text: "Số lượng",
                         style: appStyle(18, kDark, FontWeight.bold)),
                     SizedBox(
                       width: 5.w,
@@ -348,7 +394,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                   height: 20.h,
                 ),
                 ReusableText(
-                  text: "Preferences",
+                  text: "Ghi chú",
                   style: appStyle(18, kDark, FontWeight.w600),
                 ),
                 SizedBox(
@@ -358,7 +404,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                   height: 65.h,
                   child: CustomTextField(
                     controller: _preferences,
-                    hintText: "Add a note with your preferences",
+                    hintText: "Thêm ghi chú cho món của bạn",
                     maxLines: 3,
                   ),
                 ),
@@ -381,7 +427,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                             Get.to(() => const LoginPage());
                           } else if (user.phoneVerification == false) {
                             showVerificationSheet(context);
-                          } else if (addressTriger == false) {
+                          } else if (!hasAddress) {
                             showAddressSheet(context);
                           } else {
                             double price = (widget.appliances.price +

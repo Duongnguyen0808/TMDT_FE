@@ -23,6 +23,17 @@ FetchHook useFetchDefault(BuildContext context) {
 
   Future<void> fetchData() async {
     String? accessToken = box.read("token");
+    final bool isLoggedIn = accessToken != null &&
+        accessToken.isNotEmpty &&
+        accessToken != 'null' &&
+        accessToken != 'undefined';
+
+    // Nếu chưa đăng nhập: bỏ qua hoàn toàn, tránh gọi API và tránh mở sheet
+    if (!isLoggedIn) {
+      addresses.value = null;
+      isLoading.value = false;
+      return;
+    }
 
     Map<String, String> headers = {
       'Content-Type': 'application/json',
@@ -31,6 +42,22 @@ FetchHook useFetchDefault(BuildContext context) {
     isLoading.value = true;
 
     try {
+      // Kiểm tra xem user có địa chỉ nào không
+      Uri checkUrl = Uri.parse('$appBaseUrl/api/address/all');
+      final checkResponse = await http.get(checkUrl, headers: headers);
+
+      bool hasAnyAddress = false;
+      if (checkResponse.statusCode == 200) {
+        var checkData = jsonDecode(checkResponse.body);
+        // API trả về {addresses: [...]}
+        if (checkData['addresses'] != null &&
+            checkData['addresses'] is List &&
+            (checkData['addresses'] as List).isNotEmpty) {
+          hasAnyAddress = true;
+        }
+      }
+
+      // Lấy địa chỉ mặc định
       Uri url = Uri.parse('$appBaseUrl/api/address/default');
       final response = await http.get(url, headers: headers);
 
@@ -43,15 +70,20 @@ FetchHook useFetchDefault(BuildContext context) {
           controller.setAddress1 = addresses.value!.addressLine1;
         } else {
           addresses.value = null;
+          // Chỉ hiện popup nếu chưa có địa chỉ nào
+          if (!hasAnyAddress) {
+            showAddressSheet(context);
+          }
         }
       } else {
-        box.write('defaultAddress', false);
-        showAddressSheet(context);
+        // Chỉ hiện popup nếu chưa có địa chỉ nào
+        if (!hasAnyAddress) {
+          showAddressSheet(context);
+        }
         appiError.value = apiErrorFromJson(response.body);
       }
     } catch (e) {
-      box.write('defaultAddress', false);
-      showAddressSheet(context);
+      // Không hiển thị sheet khi lỗi nữa, người dùng có thể tự thêm sau
       error.value = e is Exception ? e : Exception(e.toString());
     } finally {
       isLoading.value = false;

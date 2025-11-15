@@ -3,6 +3,7 @@ import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/models/api_error.dart';
 import 'package:appliances_flutter/models/categories.dart';
 import 'package:appliances_flutter/models/hook_models/hook_result.dart';
+import 'package:appliances_flutter/utils/api_helper.dart';
 import 'package:http/http.dart' as http;
 
 FetchHook useFetchAlCategories() {
@@ -15,7 +16,8 @@ FetchHook useFetchAlCategories() {
     isLoading.value = true;
 
     try {
-      Uri url = Uri.parse('$appBaseUrl/api/category');
+      Uri url =
+          Uri.parse(ApiHelper.addLanguageParam('$appBaseUrl/api/category'));
       final response = await http.get(url);
       if (response.statusCode == 200) {
         categoriesItems.value = categoriesModelFromJson(response.body);

@@ -17,8 +17,13 @@ FetchHook useFetchStore(String code) {
     isLoading.value = true;
 
     try {
-      Uri url = Uri.parse('$appBaseUrl/api/store/$code');
+      // Nếu code rỗng, lấy tất cả stores. Ngược lại lấy random stores theo code
+      Uri url = code.isEmpty
+          ? Uri.parse('$appBaseUrl/api/store/all')
+          : Uri.parse('$appBaseUrl/api/store/$code');
+
       final response = await http.get(url);
+
       if (response.statusCode == 200) {
         stores.value = storeModelFromJson(response.body);
       } else {

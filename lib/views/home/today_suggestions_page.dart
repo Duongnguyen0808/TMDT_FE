@@ -15,7 +15,8 @@ class TodaySuggestionsPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hookResults = useFetchAppliances("41007428");
+    // Truyền code rỗng để lấy tất cả sản phẩm
+    final hookResults = useFetchAppliances("");
     List<AppliancesModel>? appliancess = hookResults.data;
     final isLoading = hookResults.isLoading;
     return Scaffold(

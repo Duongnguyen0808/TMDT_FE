@@ -30,53 +30,57 @@ class MainScreen extends HookWidget {
     final box = GetStorage();
     String? token = box.read("token");
     debugPrint(token);
-    if (token != null) {
-      useFetchDefault(context);
-    }
+    // Hooks không được gọi có điều kiện. Gọi unconditionally;
+    // bên trong hook sẽ tự bỏ qua nếu chưa đăng nhập.
+    useFetchDefault(context);
 
     final controller = Get.put(TabIndexController());
     final cartController = Get.put(CartController());
-    return Obx(() => Scaffold(
-          body: Stack(
-            children: [
-              pageList[controller.tabIndex],
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Theme(
-                    data: Theme.of(context).copyWith(canvasColor: kPrimary),
-                    child: BottomNavigationBar(
-                      showSelectedLabels: false,
-                      showUnselectedLabels: false,
-                      unselectedIconTheme:
-                          const IconThemeData(color: Colors.black38),
-                      selectedIconTheme: const IconThemeData(color: kSecondary),
-                      onTap: (value) {
-                        controller.setTabIndex = value;
-                      },
-                      currentIndex: controller.tabIndex,
-                      items: [
-                        BottomNavigationBarItem(
-                            icon: controller.tabIndex == 0
-                                ? const Icon(AntDesign.appstore1)
-                                : const Icon(AntDesign.appstore_o),
-                            label: 'Home'),
-                        const BottomNavigationBarItem(
-                            icon: Icon(Icons.search), label: 'Search'),
-                        BottomNavigationBarItem(
-                            icon: Obx(() => Badge(
-                                label: Text('${cartController.cartCount}'),
-                                child: const Icon(FontAwesome.opencart))),
-                            label: 'Cart'),
-                        BottomNavigationBarItem(
-                            icon: controller.tabIndex == 3
-                                ? const Icon(FontAwesome.user_circle)
-                                : const Icon(FontAwesome.user_circle_o),
-                            label: 'Profile'),
-                      ],
-                    )),
-              )
-            ],
-          ),
-        ));
+    return Obx(
+      () => Scaffold(
+        body: Stack(
+          children: [
+            pageList[controller.tabIndex],
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Theme(
+                  data: Theme.of(context).copyWith(canvasColor: kPrimary),
+                  child: BottomNavigationBar(
+                    showSelectedLabels: false,
+                    showUnselectedLabels: false,
+                    unselectedIconTheme:
+                        const IconThemeData(color: Colors.black38),
+                    selectedIconTheme: const IconThemeData(color: kSecondary),
+                    onTap: (value) {
+                      controller.setTabIndex = value;
+                      // Ghi tabIndex để các trang có thể lắng nghe
+                      box.write('tabIndex', value);
+                    },
+                    currentIndex: controller.tabIndex,
+                    items: [
+                      BottomNavigationBarItem(
+                          icon: controller.tabIndex == 0
+                              ? const Icon(AntDesign.appstore1)
+                              : const Icon(AntDesign.appstore_o),
+                          label: 'Home'),
+                      const BottomNavigationBarItem(
+                          icon: Icon(Icons.search), label: 'Search'),
+                      BottomNavigationBarItem(
+                          icon: Obx(() => Badge(
+                              label: Text('${cartController.cartCount}'),
+                              child: const Icon(FontAwesome.opencart))),
+                          label: 'Cart'),
+                      BottomNavigationBarItem(
+                          icon: controller.tabIndex == 3
+                              ? const Icon(FontAwesome.user_circle)
+                              : const Icon(FontAwesome.user_circle_o),
+                          label: 'Profile'),
+                    ],
+                  )),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

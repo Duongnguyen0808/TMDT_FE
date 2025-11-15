@@ -1,8 +1,7 @@
 import 'package:intl/intl.dart';
 
-// Tỷ giá quy đổi USD -> VND (có thể chỉnh nếu cần)
-const double usdToVndRate = 24000.0;
-
+// Hiển thị tiền tệ theo chuẩn Việt Nam (VND) mà không quy đổi.
+// Lưu ý: mọi con số trong hệ thống được hiểu là VND trực tiếp.
 String formatVND(num amount) {
   final formatter = NumberFormat.currency(
     locale: 'vi_VN',
@@ -12,6 +11,6 @@ String formatVND(num amount) {
   return formatter.format(amount);
 }
 
-double toVND(double usdAmount) => usdAmount * usdToVndRate;
-
-String usdToVndText(double usdAmount) => formatVND(toVND(usdAmount));
+// Giữ nguyên tên hàm để hạn chế phải sửa nhiều nơi trong codebase.
+// Bây giờ chỉ định dạng VND, không còn chuyển đổi từ USD -> VND.
+String usdToVndText(double amount) => formatVND(amount);

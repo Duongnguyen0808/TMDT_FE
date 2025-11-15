@@ -46,13 +46,18 @@ dependencies:
   app_links: ^6.4.1
   webview_flutter: ^4.13.0
   vietmap_flutter_gl: ^4.1.0
+  vietmap_flutter_plugin: ^0.5.2
   firebase_app_check: ^0.4.1+2
+  timeago: ^3.6.1
+  carousel_slider: ^5.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^2.0.0
+
+## Removed invalid dependency_overrides for vietmap_flutter_gl_web (local path not present)
 
 flutter:
   uses-material-design: true
@@ -62,8 +67,5 @@ flutter:
     - assets/images/
     - assets/anime/
     - assets/icons/
+    - assets/banner/
     - assets/images/restaurant_bk.png
-
-dependency_overrides:
-  vietmap_flutter_gl_web:
-    path: ../packages/vietmap_flutter_gl_web

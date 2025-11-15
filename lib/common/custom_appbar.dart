@@ -61,7 +61,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ReusableText(
-                          text: "Giao tới",
+                          text: "deliver_to".tr,
                           style: appStyle(13, kSecondary, FontWeight.w600)),
                       Obx(
                         () => SizedBox(
@@ -69,7 +69,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                           child: Text(
                               controller.address1 == ""
                                   ? controller.address == ''
-                                      ? "Vui lòng bật dịch vụ vị trí để lấy địa chỉ"
+                                      ? "enable_location".tr
                                       : controller.address
                                   : controller.address1,
                               overflow: TextOverflow.ellipsis,

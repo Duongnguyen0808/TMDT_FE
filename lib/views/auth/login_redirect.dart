@@ -21,7 +21,7 @@ class LoginRedirect extends StatelessWidget {
         backgroundColor: kLightWhite,
         elevation: 0.3,
         title: ReusableText(
-            text: "Please login to access this page",
+            text: "Vui lòng đăng nhập để truy cập trang này",
             style: appStyle(12, kDark, FontWeight.w500)),
       ),
       body: SafeArea(

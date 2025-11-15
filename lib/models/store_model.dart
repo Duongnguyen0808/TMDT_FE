@@ -23,7 +23,7 @@ class StoreModel {
   String code;
   String logoUrl;
   double rating;
-  String ratingCount;
+  int ratingCount;
   String verification;
   String verificationMessage;
   Coords coords;
@@ -59,7 +59,9 @@ class StoreModel {
         code: json["code"],
         logoUrl: json["logoUrl"],
         rating: json["rating"].toDouble(),
-        ratingCount: json["ratingCount"],
+        ratingCount: json["ratingCount"] is int
+            ? json["ratingCount"]
+            : int.tryParse(json["ratingCount"].toString()) ?? 0,
         verification: json["verification"],
         verificationMessage: json["verificationMessage"],
         coords: Coords.fromJson(json["coords"]),

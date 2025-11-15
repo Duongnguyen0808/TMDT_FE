@@ -1,10 +1,8 @@
 import 'package:appliances_flutter/common/app_style.dart';
-import 'package:appliances_flutter/common/custom_container.dart';
+import 'package:appliances_flutter/common/back_ground_container.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
-import 'package:appliances_flutter/common/shimmers/foodlist_shimmer.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/controllers/login_controller.dart';
-import 'package:appliances_flutter/controllers/orders_controller.dart';
 import 'package:appliances_flutter/hooks/fetch_cart.dart';
 import 'package:appliances_flutter/hooks/fetch_default.dart';
 import 'package:appliances_flutter/models/cart_response.dart';
@@ -13,11 +11,10 @@ import 'package:appliances_flutter/models/login_response.dart';
 import 'package:appliances_flutter/views/auth/login_redirect.dart';
 import 'package:appliances_flutter/views/auth/verification_page.dart';
 import 'package:appliances_flutter/views/cart/widget/cart_title.dart';
-import 'package:appliances_flutter/views/orders/payment.dart';
-import 'package:appliances_flutter/services/distance.dart';
+import 'package:appliances_flutter/views/cart/cart_checkout_page.dart';
 import 'package:appliances_flutter/views/profile/shipping_address.dart';
-import 'package:appliances_flutter/models/order_request.dart';
 import 'package:appliances_flutter/utils/currency.dart';
+import 'package:appliances_flutter/utils/guest_cart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -31,199 +28,236 @@ class CartPage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final box = GetStorage();
+    final isMounted = useIsMounted();
     final hookResult = useFetchCart();
     final List<CartResponse> carts = hookResult.data ?? [];
     final isLoading = hookResult.isLoading;
     final refetch = hookResult.refetch;
 
-    // Lấy địa chỉ mặc định để tính phí giao hàng
-    final defaultHook = useFetchDefault(context);
-    final AddressResponse? selectedAddress = defaultHook.data;
-    final defaultRefetch = defaultHook.refetch;
+    // ... existing code ...
+    // Xác định trạng thái đăng nhập sớm để dùng trong listener
+    final String? token = box.read('token');
+    final bool isLoggedIn = token != null &&
+        token.isNotEmpty &&
+        token != 'null' &&
+        token != 'undefined';
+
+    // Tự động refetch khi các key liên quan thay đổi
+    useEffect(() {
+      // Giỏ khách: giữ nguyên cho chế độ guest
+      box.listenKey(kGuestCartKey, (_) {
+        if (isMounted()) refetch?.call();
+      });
+      // Token: sau đăng nhập/đăng xuất
+      box.listenKey('token', (_) {
+        if (isMounted()) refetch?.call();
+      });
+      // cartCount: sau khi thêm/xoá/sửa số lượng ở chế độ đã đăng nhập
+      box.listenKey('cartCount', (_) {
+        if (isMounted() && isLoggedIn) refetch?.call();
+      });
+      // tabIndex: mở lại tab giỏ hàng
+      box.listenKey('tabIndex', (val) {
+        final i = int.tryParse(val?.toString() ?? '');
+        if (i == 2 && isMounted()) refetch?.call();
+      });
+      return null;
+    }, const []);
+
+    // Lấy địa chỉ mặc định chỉ khi đã đăng nhập (đã có token/isLoggedIn ở trên)
+
+    // Fallback: nếu hook state đang trống mà badge > 0 và chưa đăng nhập,
+    // đọc trực tiếp từ storage để đảm bảo hiển thị sản phẩm ngay.
+    final List<CartResponse> displayCarts = (!isLoggedIn && carts.isEmpty)
+        ? readGuestCart(box)
+            .map((e) => CartResponse.fromJson(e))
+            .toList(growable: false)
+        : carts;
+    // Debug trạng thái hiển thị
+    // Log một lần khi build để kiểm tra độ dài danh sách
+    // Không ảnh hưởng performance đáng kể
+    debugPrint(
+        '[CartPage] isLoggedIn=$isLoggedIn, carts.len=${carts.length}, display.len=${displayCarts.length}');
+    final defaultHook = isLoggedIn ? useFetchDefault(context) : null;
+    final AddressResponse? selectedAddress =
+        isLoggedIn ? defaultHook!.data : null;
+    final defaultRefetch = isLoggedIn ? defaultHook!.refetch : null;
 
     LoginResponse? user;
 
     final controller = Get.put(LoginController());
-    final orderController = Get.put(OrdersController());
 
-    String? token = box.read('token');
-
-    if (token != null) {
+    String? _token = token;
+    if (_token != null) {
       user = controller.getUserInfo();
     }
 
-    if (token == null) {
-      return const LoginRedirect();
-    }
+    // Không chặn giỏ khi chưa đăng nhập; cho phép xem giỏ khách
 
     if (user != null && user.verification == false) {
       return const VerificationPage();
     }
 
-    return Obx(() => orderController.paymentUrl.isNotEmpty
-        ? const PaymentWebView()
-        : Scaffold(
-            backgroundColor: kPrimary,
-            appBar: AppBar(
-              elevation: 0,
-              backgroundColor: kOffWhite,
-              title: ReusableText(
-                  text: "Giỏ hàng", style: appStyle(14, kGray, FontWeight.w600)),
+    // Widget checkout Section: điều kiện hiển thị theo trạng thái giỏ
+    final Widget checkoutSection = displayCarts.isNotEmpty
+        ? Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+            decoration: BoxDecoration(
+              color: kLightWhite,
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                )
+              ],
             ),
-            body: SafeArea(
-              child: CustomContainer(
-                  containerContent: isLoading
-                      ? const FoodsListShimmer()
-                      : Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w),
-                          child: SizedBox(
-                            width: width,
-                            height: height,
-                            child: ListView.builder(
-                                itemCount: carts.length,
-                                itemBuilder: (context, i) {
-                                  var cart = carts[i];
-                                  return CartTile(
-                                      refetch: refetch,
-                                      color: kLightWhite,
-                                      cart: cart);
-                                }),
-                          ),
-                        )),
-            ),
-            bottomNavigationBar: carts.isEmpty
-                ? null
-                : Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                    decoration: const BoxDecoration(color: kLightWhite),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ReusableText(
-                              text:
-                                  "Tổng (${carts.length}): ${usdToVndText(carts.fold(0.0, (s, c) => s + c.totalPrice))}",
-                              style: appStyle(12, kDark, FontWeight.w600),
-                            ),
-                            if (selectedAddress == null)
-                              ReusableText(
-                                text: "Chưa có địa chỉ giao hàng",
-                                style: appStyle(10, kRed, FontWeight.w400),
-                              )
-                          ],
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: kPrimary,
-                              foregroundColor: kLightWhite,
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 16.w, vertical: 10.h)),
-                          onPressed: () async {
-                            // Yêu cầu địa chỉ nếu chưa có
-                            if (selectedAddress == null) {
-                              Get.to(() => ShippingAddress(onAddressSet: () {
-                                    defaultRefetch?.call();
-                                    Get.back();
-                                  }));
-                              return;
-                            }
-
-                            // Kiểm tra cùng cửa hàng
-                            final firstStoreId = carts.first.productId.store.id;
-                            final multiStore = carts.any(
-                                (c) => c.productId.store.id != firstStoreId);
-                            if (multiStore) {
-                              Get.snackbar('Giỏ hàng chứa nhiều cửa hàng',
-                                  'Vui lòng chỉ giữ sản phẩm từ một cửa hàng để thanh toán.',
-                                  colorText: kLightWhite,
-                                  backgroundColor: kRed,
-                                  icon: const Icon(Icons.error_outline));
-                              return;
-                            }
-
-                            // Chọn phương thức
-                            final method = await showModalBottomSheet<String>(
-                              context: context,
-                              builder: (ctx) {
-                                return SafeArea(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      ListTile(
-                                        leading: const Icon(Icons.payment),
-                                        title: const Text('Thanh toán VNPay'),
-                                        onTap: () => Navigator.pop(ctx, 'VNPay'),
-                                      ),
-                                      ListTile(
-                                        leading: const Icon(Icons.money),
-                                        title: const Text('Thanh toán COD'),
-                                        onTap: () => Navigator.pop(ctx, 'COD'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            );
-
-                            if (method == null) return;
-
-                            // Tính phí giao hàng từ cửa hàng tới địa chỉ
-                            final coords = carts.first.productId.store.coords;
-                            final distance = Distance().calculateDistanceTimePrice(
-                                coords.latitude,
-                                coords.longitude,
-                                selectedAddress.latitude ?? 0.0,
-                                selectedAddress.longitude ?? 0.0,
-                                10,
-                                2);
-
-                            final orderTotal =
-                                carts.fold(0.0, (s, c) => s + c.totalPrice);
-                            final grandTotal = orderTotal + distance.price;
-
-                            // Map cart -> OrderItems (sử dụng price mỗi đơn vị)
-                            final items = carts.map((c) {
-                              final unitPrice = c.quantity > 0
-                                  ? (c.totalPrice / c.quantity)
-                                  : c.totalPrice;
-                              return OrderItem(
-                                appliancesId: c.productId.id,
-                                quantity: c.quantity,
-                                price: unitPrice,
-                                additives: c.additives,
-                                instructions: "",
-                              );
-                            }).toList();
-
-                            final order = OrderRequest(
-                              userId: selectedAddress.userId,
-                              orderItems: items,
-                              orderTotal: orderTotal,
-                              deliveryFee: distance.price.toStringAsFixed(2),
-                              grandTotal: grandTotal,
-                              deliveryAddress: selectedAddress.id,
-                              storeAddress: coords.address,
-                              storeId: firstStoreId,
-                              storeCoords: [coords.latitude, coords.longitude],
-                              recipientCoords: [
-                                selectedAddress.latitude ?? 0.0,
-                                selectedAddress.longitude ?? 0.0,
-                              ],
-                              paymentMethod: method,
-                            );
-
-                            final orderData = orderRequestToJson(order);
-                            orderController.createOrder(orderData, order,
-                                method: method);
-                          },
-                          child: const Text('Thanh toán'),
-                        ),
-                      ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ReusableText(
+                      text:
+                          "${'total'.tr} (${displayCarts.length}): ${usdToVndText(displayCarts.fold(0.0, (s, c) => s + c.totalPrice))}",
+                      style: appStyle(13, kDark, FontWeight.w700),
+                      maxLines: 2,
                     ),
+                    if (isLoggedIn && selectedAddress == null)
+                      ReusableText(
+                        text: "no_shipping_address".tr,
+                        style: appStyle(10, kRed, FontWeight.w400),
+                      )
+                  ],
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: kPrimary,
+                      foregroundColor: kLightWhite,
+                      shape: const StadiumBorder(),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 22.w, vertical: 12.h)),
+                  onPressed: () async {
+                    if (!isLoggedIn) {
+                      Get.to(() => const LoginRedirect());
+                      return;
+                    }
+
+                    if (selectedAddress == null) {
+                      Get.to(() => ShippingAddress(onAddressSet: () {
+                            defaultRefetch?.call();
+                            Get.back();
+                          }));
+                      return;
+                    }
+
+                    // Group products by store
+                    final Map<String, List<CartResponse>> storeGroups = {};
+                    for (var cart in displayCarts) {
+                      final storeId = cart.productId.store.id;
+                      if (!storeGroups.containsKey(storeId)) {
+                        storeGroups[storeId] = [];
+                      }
+                      storeGroups[storeId]!.add(cart);
+                    }
+
+                    debugPrint(
+                        '[CartPage] Found ${storeGroups.length} store(s)');
+
+                    // Check if all stores have valid info
+                    for (var entry in storeGroups.entries) {
+                      final storeId = entry.key;
+                      final items = entry.value;
+                      final coords = items.first.productId.store.coords;
+
+                      if (storeId.isEmpty && coords.address.isEmpty) {
+                        Get.snackbar(
+                            'missing_store_info'.tr, 'missing_store_msg'.tr,
+                            colorText: kLightWhite,
+                            backgroundColor: kRed,
+                            icon: const Icon(Icons.error_outline));
+                        return;
+                      }
+                    }
+
+                    // Show summary and navigate
+                    final storeCount = storeGroups.length;
+                    if (storeCount > 1) {
+                      // Show info that multiple orders will be created
+                      Get.snackbar(
+                        '${'order_from_stores'.tr} $storeCount ${'stores'.tr}',
+                        '${'split_order_msg'.tr} $storeCount ${'separate_orders'.tr}',
+                        colorText: kLightWhite,
+                        backgroundColor: kPrimary,
+                        icon: const Icon(Icons.info_outline),
+                        duration: const Duration(seconds: 2),
+                      );
+                    }
+
+                    // Navigate to checkout page with grouped items
+                    Get.to(() => CartCheckoutPage(
+                          cartItems: displayCarts,
+                          address: selectedAddress,
+                          storeGroups: storeGroups,
+                        ));
+                  },
+                  child: Text(
+                      isLoggedIn ? 'Thanh toán' : 'Đăng nhập để thanh toán'),
+                ),
+              ],
+            ),
+          )
+        : const SizedBox.shrink();
+
+    return Scaffold(
+      backgroundColor: kOffWhite,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: kOffWhite,
+        title: ReusableText(
+            text: "Giỏ hàng", style: appStyle(14, kGray, FontWeight.w600)),
+      ),
+      body: SafeArea(
+        child: BackGroundContainer(
+          color: kOffWhite,
+          child: Column(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w),
+                  child: Stack(
+                    children: [
+                      ListView.builder(
+                          itemCount: displayCarts.length,
+                          itemBuilder: (context, i) {
+                            final cart = displayCarts[i];
+                            return CartTile(
+                                refetch: refetch,
+                                color: kLightWhite,
+                                cart: cart);
+                          }),
+                      if (isLoading)
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: LinearProgressIndicator(
+                            minHeight: 2,
+                            backgroundColor: kLightWhite,
+                            color: kPrimary,
+                          ),
+                        ),
+                    ],
                   ),
-          ));
+                ),
+              ),
+              checkoutSection,
+              SizedBox(height: 50.h),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

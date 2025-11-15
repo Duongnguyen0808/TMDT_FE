@@ -9,7 +9,7 @@ class OrderRequest {
   final String userId;
   final List<OrderItem> orderItems;
   final double orderTotal;
-  final String deliveryFee;
+  final double deliveryFee;
   final double grandTotal;
   final String deliveryAddress;
   final String storeAddress;
@@ -17,6 +17,8 @@ class OrderRequest {
   final List<double> storeCoords;
   final List<double> recipientCoords;
   final String paymentMethod;
+  final String? promoCode;
+  final double? discountAmount;
 
   OrderRequest({
     required this.userId,
@@ -30,6 +32,8 @@ class OrderRequest {
     required this.storeCoords,
     required this.recipientCoords,
     required this.paymentMethod,
+    this.promoCode,
+    this.discountAmount,
   });
 
   factory OrderRequest.fromJson(Map<String, dynamic> json) => OrderRequest(
@@ -37,7 +41,7 @@ class OrderRequest {
         orderItems: List<OrderItem>.from(
             json["orderItems"].map((x) => OrderItem.fromJson(x))),
         orderTotal: json["orderTotal"]?.toDouble(),
-        deliveryFee: json["deliveryFee"],
+        deliveryFee: json["deliveryFee"]?.toDouble(),
         grandTotal: json["grandTotal"]?.toDouble(),
         deliveryAddress: json["deliveryAddress"],
         storeAddress: json["storeAddress"],
@@ -47,6 +51,10 @@ class OrderRequest {
         recipientCoords: List<double>.from(
             json["recipientCoords"].map((x) => x?.toDouble())),
         paymentMethod: json["paymentMethod"],
+        promoCode: json["promoCode"],
+        discountAmount: json["discountAmount"] == null
+            ? null
+            : (json["discountAmount"] as num).toDouble(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -61,6 +69,8 @@ class OrderRequest {
         "storeCoords": List<dynamic>.from(storeCoords.map((x) => x)),
         "recipientCoords": List<dynamic>.from(recipientCoords.map((x) => x)),
         "paymentMethod": paymentMethod,
+        "promoCode": promoCode ?? "",
+        "discountAmount": discountAmount ?? 0.0,
       };
 }
 

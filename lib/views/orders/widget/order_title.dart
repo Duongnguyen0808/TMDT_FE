@@ -54,7 +54,7 @@ class OrderTile extends StatelessWidget {
                           padding: EdgeInsets.only(left: 6.w, bottom: 2.h),
                           color: kGray.withOpacity(0.6),
                           height: 16.h,
-                          width: width,
+                          width: 70.w,
                           child: RatingBarIndicator(
                             rating: 5,
                             itemCount: 5,
@@ -76,10 +76,11 @@ class OrderTile extends StatelessWidget {
                   children: [
                     ReusableText(
                       text: appliances.title,
-                      style: appStyle(11, kDark, FontWeight.w400),
+                      style: appStyle(11, kDark, FontWeight.w600),
+                      maxLines: 1,
                     ),
                     ReusableText(
-                      text: "Delivery time: ${appliances.time}",
+                      text: "Thời gian giao hàng: ${appliances.time}",
                       style: appStyle(11, kGray, FontWeight.w400),
                     ),
                     SizedBox(
@@ -117,47 +118,60 @@ class OrderTile extends StatelessWidget {
           ),
         ),
         Positioned(
-          right: 5.w,
+          right: 6.w,
           top: 6.h,
-          child: Container(
-            width: 60.w,
-            height: 19.h,
-            decoration: BoxDecoration(
-                color: kPrimary, borderRadius: BorderRadius.circular(10.r)),
-            child: Center(
-              child: ReusableText(
-                  text: usdToVndText(appliances.price),
-                  style: appStyle(12, kLightWhite, FontWeight.bold)),
-            ),
-          ),
-        ),
-        Positioned(
-          right: 75.w,
-          top: 6.h,
-          child: GestureDetector(
-            onTap: () {
-              var data = CartRequest(
-                  productId: appliances.id,
-                  additives: [],
-                  quantity: 1,
-                  totalPrice: appliances.price);
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  var data = CartRequest(
+                      productId: appliances.id,
+                      additives: [],
+                      quantity: 1,
+                      totalPrice: appliances.price);
 
-              String cart = cartRequestToJson(data);
-              controller.addToCart(cart);
-            },
-            child: Container(
-              width: 19.w,
-              height: 19.h,
-              decoration: BoxDecoration(
-                  color: kSecondary, borderRadius: BorderRadius.circular(10.r)),
-              child: Center(
-                child: Icon(
-                  MaterialCommunityIcons.cart_plus,
-                  size: 15.h,
-                  color: kLightWhite,
+                  String cart = cartRequestToJson(data);
+                  controller.addToCart(cart);
+                },
+                child: Container(
+                  width: 22.w,
+                  height: 22.h,
+                  decoration: BoxDecoration(
+                      color: kSecondary,
+                      borderRadius: BorderRadius.circular(12.r)),
+                  child: Center(
+                    child: Icon(
+                      MaterialCommunityIcons.cart_plus,
+                      size: 16.h,
+                      color: kLightWhite,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              SizedBox(width: 8.w),
+              Container(
+                constraints: BoxConstraints(minWidth: 100.w),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 2.h),
+                height: 22.h,
+                decoration: BoxDecoration(
+                    color: kPrimary,
+                    borderRadius: BorderRadius.circular(12.r),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      )
+                    ],
+                    border: Border.all(color: Colors.white24, width: 1)),
+                child: Center(
+                  child: ReusableText(
+                      text: usdToVndText(appliances.price),
+                      style: appStyle(12, kLightWhite, FontWeight.bold)),
+                ),
+              ),
+            ],
           ),
         )
       ],

@@ -4,6 +4,7 @@ import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/models/api_error.dart';
 import 'package:appliances_flutter/models/appliances_model.dart';
 import 'package:appliances_flutter/models/hook_models/hook_result.dart';
+import 'package:appliances_flutter/utils/api_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
@@ -19,10 +20,14 @@ FetchHook useFetchAllAppliances(String code) {
     isLoading.value = true;
 
     try {
-      Uri url = Uri.parse('$appBaseUrl/api/appliances/byCode/$code');
+      // Lấy tất cả sản phẩm nếu code rỗng, hoặc lọc theo code nếu có
+      Uri url = code.isEmpty
+          ? Uri.parse(
+              ApiHelper.addLanguageParam('$appBaseUrl/api/appliances/all'))
+          : Uri.parse(ApiHelper.addLanguageParam(
+              '$appBaseUrl/api/appliances/byCode/$code'));
       final response = await http.get(url);
 
-      print(response.statusCode);
       if (response.statusCode == 200) {
         appliancess.value = appliancesModelFromJson(response.body);
       } else {

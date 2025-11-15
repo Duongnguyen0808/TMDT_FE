@@ -10,6 +10,9 @@ import 'package:appliances_flutter/views/orders/user_orders.dart' as orders;
 import 'package:appliances_flutter/views/profile/addresses_page.dart';
 import 'package:appliances_flutter/views/profile/service_center_page.dart';
 import 'package:appliances_flutter/views/profile/support_page.dart';
+import 'package:appliances_flutter/views/profile/favorites_page.dart';
+import 'package:appliances_flutter/views/profile/settings_page.dart';
+import 'package:appliances_flutter/views/voucher/voucher_page.dart';
 
 import 'package:appliances_flutter/views/profile/widget/profile_title_widget.dart';
 import 'package:appliances_flutter/views/profile/widget/user_info_widget.dart';
@@ -69,21 +72,27 @@ class ProfilePage extends StatelessWidget {
                             transition: Transition.cupertino,
                             duration: const Duration(milliseconds: 900));
                       },
-                      title: "Đơn hàng của tôi",
+                      title: 'my_orders'.tr,
                       icon: Icons.shopping_cart),
                   ProfileTileWidget(
-                    onTap: () {},
-                    title: "Địa điểm yêu thích",
+                    onTap: () {
+                      Get.to(() => const FavoritesPage(),
+                          transition: Transition.cupertino,
+                          duration: const Duration(milliseconds: 900));
+                    },
+                    title: 'favorites'.tr,
                     icon: Ionicons.heart_outline,
                   ),
                   ProfileTileWidget(
                     onTap: () {},
-                    title: "Đánh giá của tôi",
+                    title: 'my_reviews'.tr,
                     icon: Ionicons.chatbubbles_outline,
                   ),
                   ProfileTileWidget(
-                    onTap: () {},
-                    title: "Phiếu giảm giá",
+                    onTap: () {
+                      Get.to(() => const VoucherPage());
+                    },
+                    title: 'vouchers'.tr,
                     icon: MaterialCommunityIcons.tag_outline,
                   ),
                 ],
@@ -101,25 +110,29 @@ class ProfilePage extends StatelessWidget {
                       onTap: () {
                         Get.to(() => const Addresses());
                       },
-                      title: "Địa chỉ giao hàng",
+                      title: 'shipping_address'.tr,
                       icon: SimpleLineIcons.location_pin),
                   ProfileTileWidget(
                     onTap: () {
                       Get.to(() => const ServiceCenterPage());
                     },
-                    title: "Trung tâm dịch vụ",
+                    title: 'service_center'.tr,
                     icon: AntDesign.customerservice,
                   ),
                   ProfileTileWidget(
                     onTap: () {
                       Get.to(() => const SupportPage());
                     },
-                    title: "Hỗ trợ khách hàng",
+                    title: 'customer_support'.tr,
                     icon: MaterialIcons.rss_feed,
                   ),
                   ProfileTileWidget(
-                    onTap: () {},
-                    title: "Cài đặt",
+                    onTap: () {
+                      Get.to(() => const SettingsPage(),
+                          transition: Transition.cupertino,
+                          duration: const Duration(milliseconds: 900));
+                    },
+                    title: 'settings'.tr,
                     icon: AntDesign.setting,
                   ),
                 ],
@@ -131,7 +144,7 @@ class ProfilePage extends StatelessWidget {
                 controller.logout();
               },
               btnColor: kRed,
-              text: "Đăng xuất",
+              text: 'logout'.tr,
               radius: 0,
             ),
           ])),

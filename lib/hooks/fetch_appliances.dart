@@ -19,7 +19,16 @@ FetchAppliancess useFetchAppliances(String code) {
     isLoading.value = true;
 
     try {
-      Uri url = Uri.parse('$appBaseUrl/api/appliances/recommendation/$code');
+      // Nếu code="recommendation", lấy bestsellers (bán chạy). Nếu rỗng, lấy tất cả.
+      Uri url;
+      if (code == "recommendation") {
+        url = Uri.parse('$appBaseUrl/api/appliances/bestsellers');
+      } else if (code.isEmpty) {
+        url = Uri.parse('$appBaseUrl/api/appliances/all');
+      } else {
+        url = Uri.parse('$appBaseUrl/api/appliances/recommendation/$code');
+      }
+
       final response = await http.get(url);
 
       if (response.statusCode == 200) {

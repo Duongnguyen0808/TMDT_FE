@@ -9,13 +9,15 @@ class OrdersTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const tabs = ['Chờ xử lý', 'Đang chuẩn bị', 'Đã giao'];
+
     return TabBar(
       controller: tabController,
       isScrollable: true,
       labelColor: kPrimary,
       unselectedLabelColor: kGray,
       indicatorColor: kPrimary,
-      tabs: orderList
+      tabs: tabs
           .map((label) => Tab(
                 child: ReusableText(
                   text: label,
@@ -76,11 +78,14 @@ class _EmptyOrders extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox, color: kGrayLight),
-          const SizedBox(height: 8),
+          Icon(Icons.shopping_bag_outlined, size: 64, color: kGrayLight),
+          const SizedBox(height: 16),
+          Text(
+            'Chưa có đơn hàng $title',
+            style: const TextStyle(color: kGray, fontSize: 16),
+          ),
           ReusableText(
-              text: title,
-              style: appStyle(14, kGray, FontWeight.w500)),
+              text: title, style: appStyle(14, kGray, FontWeight.w500)),
           ReusableText(
               text: 'Chưa có đơn hàng',
               style: appStyle(12, kGrayLight, FontWeight.normal)),

@@ -27,10 +27,17 @@ class Addresses extends HookWidget {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: kOffWhite,
+        backgroundColor: kPrimary,
+        leading: IconButton(
+          onPressed: () => Get.back(),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: kLightWhite,
+          ),
+        ),
         title: ReusableText(
-          text: "Addresses",
-          style: appStyle(13, kGray, FontWeight.w600),
+          text: "Địa chỉ",
+          style: appStyle(18, kLightWhite, FontWeight.w600),
         ),
       ),
       body: BackGroundContainer(
@@ -56,7 +63,7 @@ class Addresses extends HookWidget {
                   onTap: () {
                     Get.to(() => const ShippingAddress());
                   },
-                  text: "Add Address",
+                  text: "Thêm địa chỉ",
                 ),
               ),
             )

@@ -8,12 +8,12 @@ import 'package:appliances_flutter/models/login_response.dart';
 import 'package:appliances_flutter/views/auth/verification_page.dart';
 import 'package:appliances_flutter/views/entrypoint.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:appliances_flutter/controllers/cart_controller.dart';
 
 class LoginController extends GetxController {
   final box = GetStorage();
@@ -48,11 +48,25 @@ class LoginController extends GetxController {
 
         setLoading = false;
 
-        Get.snackbar(
-            "You are succefully logged in", "Enjoy your awesome experience",
+        Get.snackbar("Đăng nhập thành công", "Chào mừng bạn quay trở lại",
             colorText: kLightWhite,
-            backgroundColor: kPrimary,
-            icon: const Icon(Ionicons.fast_food_outline));
+            backgroundColor: kPrimary);
+
+        // Đồng bộ giỏ khách lên server sau khi đăng nhập
+        try {
+          final cartController = Get.put(CartController());
+          await cartController.mergeGuestCartToServer();
+        } catch (_) {}
+
+        // Xử lý yêu cầu thêm giỏ hàng còn pending (người dùng bấm thêm khi chưa đăng nhập)
+        try {
+          final String? pending = box.read('pendingCartAdd');
+          if (pending != null && pending.isNotEmpty) {
+            final cartController = Get.put(CartController());
+            cartController.addToCart(pending);
+            box.remove('pendingCartAdd');
+          }
+        } catch (_) {}
 
         if (data.verification == false) {
           Get.offAll(() => const VerificationPage(),
@@ -68,10 +82,9 @@ class LoginController extends GetxController {
       } else {
         var error = apiErrorFromJson(response.body);
 
-        Get.snackbar("Failed to login", error.message,
+        Get.snackbar("Đăng nhập thất bại", error.message,
             colorText: kLightWhite,
-            backgroundColor: kRed,
-            icon: const Icon(Icons.error_outline));
+            backgroundColor: kRed);
       }
     } catch (e) {
       debugPrint(e.toString());
