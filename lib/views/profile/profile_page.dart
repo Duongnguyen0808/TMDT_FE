@@ -1,5 +1,7 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, unnecessary_null_comparison, unused_local_variable
 
+import 'package:appliances_flutter/views/profile/my_reviews_page.dart';
+import 'package:appliances_flutter/views/profile/edit_profile_page.dart';
 import 'package:appliances_flutter/common/profile_app_bar.dart';
 import 'package:appliances_flutter/common/shimmers/custom_button.dart';
 import 'package:appliances_flutter/controllers/login_controller.dart';
@@ -12,6 +14,7 @@ import 'package:appliances_flutter/views/profile/service_center_page.dart';
 import 'package:appliances_flutter/views/profile/support_page.dart';
 import 'package:appliances_flutter/views/profile/favorites_page.dart';
 import 'package:appliances_flutter/views/profile/settings_page.dart';
+import 'package:appliances_flutter/views/chat/chat_list_page.dart';
 import 'package:appliances_flutter/views/voucher/voucher_page.dart';
 
 import 'package:appliances_flutter/views/profile/widget/profile_title_widget.dart';
@@ -84,7 +87,20 @@ class ProfilePage extends StatelessWidget {
                     icon: Ionicons.heart_outline,
                   ),
                   ProfileTileWidget(
-                    onTap: () {},
+                    onTap: () {
+                      Get.to(() => const EditProfilePage(),
+                          transition: Transition.cupertino,
+                          duration: const Duration(milliseconds: 600));
+                    },
+                    title: 'Chỉnh sửa hồ sơ',
+                    icon: Ionicons.create_outline,
+                  ),
+                  ProfileTileWidget(
+                    onTap: () {
+                      Get.to(() => const MyReviewsPage(),
+                          transition: Transition.cupertino,
+                          duration: const Duration(milliseconds: 600));
+                    },
                     title: 'my_reviews'.tr,
                     icon: Ionicons.chatbubbles_outline,
                   ),
@@ -118,6 +134,15 @@ class ProfilePage extends StatelessWidget {
                     },
                     title: 'service_center'.tr,
                     icon: AntDesign.customerservice,
+                  ),
+                  ProfileTileWidget(
+                    onTap: () {
+                      Get.to(() => const ChatListPage(),
+                          transition: Transition.cupertino,
+                          duration: const Duration(milliseconds: 600));
+                    },
+                    title: 'Hộp chat',
+                    icon: Ionicons.chatbubble_ellipses_outline,
                   ),
                   ProfileTileWidget(
                     onTap: () {

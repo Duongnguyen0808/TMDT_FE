@@ -13,6 +13,8 @@ import 'package:appliances_flutter/views/home/widgets/banner_widget.dart';
 import 'package:appliances_flutter/views/home/widgets/category_appliances_list.dart';
 import 'package:appliances_flutter/views/home/widgets/category_list.dart';
 import 'package:appliances_flutter/views/home/widgets/featured_products_list.dart';
+import 'package:appliances_flutter/views/products/under_200k_deals_page.dart';
+import 'package:appliances_flutter/views/home/widgets/promo_strip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -35,6 +37,8 @@ class HomePage extends StatelessWidget {
           containerContent: Column(
             children: [
               const CategoryList(),
+              // Promo strip elevated above other sections
+              const PromoStrip(),
               // Banner
               SizedBox(height: 10.h),
               const BannerWidget(),
@@ -43,6 +47,18 @@ class HomePage extends StatelessWidget {
                 () => controller.categoryValue == ''
                     ? Column(
                         children: [
+                          Heading(
+                            text: "Dưới 200k",
+                            onTap: () {
+                              Get.to(() => const Under200kDealsPage(),
+                                  transition: Transition.cupertino,
+                                  duration: const Duration(milliseconds: 900));
+                            },
+                          ),
+                          AppliancesList(
+                            useRecommendation: false,
+                            maxPrice: 200000,
+                          ),
                           Heading(
                             text: "recommended".tr,
                             onTap: () {

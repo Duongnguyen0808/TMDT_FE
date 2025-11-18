@@ -28,6 +28,8 @@ class AppliancesModel {
   final List<Additive> additives;
   final List<String> imageUrl;
   final double discount;
+  final int? stock; // nullable to avoid breaking older responses
+  final int? soldCount;
 
   AppliancesModel({
     required this.id,
@@ -46,6 +48,8 @@ class AppliancesModel {
     required this.additives,
     required this.imageUrl,
     required this.discount,
+    this.stock,
+    this.soldCount,
   });
 
   factory AppliancesModel.fromJson(Map<String, dynamic> json) =>
@@ -73,6 +77,16 @@ class AppliancesModel {
         discount: (json["discount"] is int)
             ? (json["discount"] as int).toDouble()
             : (json["discount"]?.toDouble() ?? 0.0),
+        stock: json.containsKey('stock')
+            ? (json['stock'] is int
+                ? json['stock']
+                : int.tryParse(json['stock'].toString()))
+            : null,
+        soldCount: json.containsKey('soldCount')
+            ? (json['soldCount'] is int
+                ? json['soldCount']
+                : int.tryParse(json['soldCount'].toString()))
+            : null,
       );
 
   Map<String, dynamic> toJson() => {
@@ -92,6 +106,8 @@ class AppliancesModel {
         "additives": List<dynamic>.from(additives.map((x) => x.toJson())),
         "imageUrl": List<dynamic>.from(imageUrl.map((x) => x)),
         "discount": discount,
+        if (stock != null) "stock": stock,
+        if (soldCount != null) "soldCount": soldCount,
       };
 }
 

@@ -4,6 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
+import 'package:appliances_flutter/views/auth/change_password_page.dart';
+import 'package:appliances_flutter/views/profile/my_reviews_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -163,6 +165,95 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
 
             SizedBox(height: 16.h),
+
+            // Security Section
+            Container(
+              decoration: BoxDecoration(
+                color: kWhite,
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(16.w),
+                    child: Text(
+                      'Bảo mật',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: kGray,
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    onTap: () {
+                      Get.to(
+                        () => const ChangePasswordPage(),
+                        transition: Transition.fadeIn,
+                        duration: const Duration(milliseconds: 400),
+                      );
+                    },
+                    leading: Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: kSecondary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Ionicons.lock_closed_outline,
+                        color: kSecondary,
+                        size: 24.sp,
+                      ),
+                    ),
+                    title: Text(
+                      'Đổi mật khẩu',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16.sp,
+                      color: kGray,
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    onTap: () {
+                      Get.to(() => const MyReviewsPage(),
+                          transition: Transition.cupertino,
+                          duration: const Duration(milliseconds: 400));
+                    },
+                    leading: Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: kPrimary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Ionicons.chatbubble_ellipses_outline,
+                        color: kPrimary,
+                        size: 24.sp,
+                      ),
+                    ),
+                    title: Text(
+                      'Đánh giá của tôi',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16.sp,
+                      color: kGray,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
             // App Info Section
             Container(

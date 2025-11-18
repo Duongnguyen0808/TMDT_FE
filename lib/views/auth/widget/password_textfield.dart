@@ -11,9 +11,11 @@ class PasswordTextField extends StatelessWidget {
   const PasswordTextField({
     super.key,
     this.controller,
+    this.focusNode,
   });
 
   final TextEditingController? controller;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -23,13 +25,22 @@ class PasswordTextField extends StatelessWidget {
           textInputAction: TextInputAction.next,
           keyboardType: TextInputType.visiblePassword,
           controller: controller,
+          focusNode: focusNode,
           obscureText: passwordController.password,
           validator: (value) {
-            if (value!.isEmpty) {
+            final v = value ?? '';
+            if (v.isEmpty) {
               return "Vui lòng nhập mật khẩu";
-            } else {
-              return null;
             }
+            if (v.length < 8) {
+              return "Mật khẩu phải từ 8 ký tự";
+            }
+            final hasLetter = RegExp(r"[A-Za-z]").hasMatch(v);
+            final hasNumber = RegExp(r"\d").hasMatch(v);
+            if (!hasLetter || !hasNumber) {
+              return "Mật khẩu cần chữ và số";
+            }
+            return null;
           },
           style: appStyle(12, kDark, FontWeight.normal),
           decoration: InputDecoration(

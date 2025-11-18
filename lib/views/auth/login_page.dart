@@ -6,6 +6,7 @@ import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/controllers/login_controller.dart';
 import 'package:appliances_flutter/models/login_model.dart';
 import 'package:appliances_flutter/views/auth/registration_page.dart';
+import 'package:appliances_flutter/views/auth/forgot_password_page.dart';
 import 'package:appliances_flutter/views/auth/widget/email_textfield.dart';
 import 'package:appliances_flutter/views/auth/widget/password_textfield.dart';
 import 'package:flutter/cupertino.dart';
@@ -28,6 +29,7 @@ class _LoginPageState extends State<LoginPage> {
       TextEditingController();
 
   final FocusNode _passwordFocusNode = FocusNode();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -68,64 +70,89 @@ class _LoginPageState extends State<LoginPage> {
               Lottie.asset("assets/anime/delivery.json"),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    EmailTextField(
-                      hintText: "Email",
-                      prefixIcon: const Icon(
-                        CupertinoIcons.mail,
-                        size: 22,
-                        color: kGrayLight,
-                      ),
-                      controller: _emailController,
-                    ),
-                    SizedBox(
-                      height: 25.h,
-                    ),
-                    PasswordTextField(
-                      controller: _passwordController,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          GestureDetector(
-                              onTap: () {
-                                Get.to(() => const RegistrationPage(),
-                                    transition: Transition.fadeIn,
-                                    duration:
-                                        const Duration(milliseconds: 1200));
-                              },
-                              child: ReusableText(
-                                  text: "Đăng ký",
-                                  style: appStyle(
-                                      12, Colors.blue, FontWeight.normal))),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      height: 30.h,
-                    ),
-                    CustomButton(
-                      text: "Đăng Nhập",
-                      onTap: () {
-                        if (_emailController.text.isNotEmpty &&
-                            _passwordController.text.length >= 8) {
-                          LoginModel model = LoginModel(
-                              email: _emailController.text,
-                              password: _passwordController.text);
+                child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        EmailTextField(
+                          hintText: "Email",
+                          isEmail: true,
+                          onEditingComplete: () => FocusScope.of(context)
+                              .requestFocus(_passwordFocusNode),
+                          prefixIcon: const Icon(
+                            CupertinoIcons.mail,
+                            size: 22,
+                            color: kGrayLight,
+                          ),
+                          controller: _emailController,
+                        ),
+                        SizedBox(
+                          height: 25.h,
+                        ),
+                        PasswordTextField(
+                          controller: _passwordController,
+                          focusNode: _passwordFocusNode,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              GestureDetector(
+                                  onTap: () {
+                                    Get.to(() => const RegistrationPage(),
+                                        transition: Transition.fadeIn,
+                                        duration:
+                                            const Duration(milliseconds: 1200));
+                                  },
+                                  child: ReusableText(
+                                      text: "Đăng ký",
+                                      style: appStyle(
+                                          12, Colors.blue, FontWeight.normal))),
+                              GestureDetector(
+                                  onTap: () {
+                                    Get.to(
+                                      () => const ForgotPasswordPage(),
+                                      transition: Transition.fadeIn,
+                                      duration:
+                                          const Duration(milliseconds: 600),
+                                    );
+                                  },
+                                  child: ReusableText(
+                                      text: "Quên mật khẩu?",
+                                      style: appStyle(
+                                          12, Colors.blue, FontWeight.normal))),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          height: 30.h,
+                        ),
+                        Obx(() => CustomButton(
+                              text: "Đăng Nhập",
+                              onTap: controller.isLoading
+                                  ? null
+                                  : () {
+                                      final isValid =
+                                          _formKey.currentState?.validate() ??
+                                              false;
+                                      if (!isValid) return;
 
-                          String data = loginModelToJson(model);
+                                      final model = LoginModel(
+                                          email: _emailController.text.trim(),
+                                          password: _passwordController.text);
 
-                          controller.loginFunction(data);
-                        }
-                      },
-                      btnHeight: 35.h,
-                      btnWidth: width,
-                    ),
-                  ],
-                ),
+                                      final data = loginModelToJson(model);
+                                      controller.loginFunction(data);
+                                    },
+                              btnHeight: 35.h,
+                              btnWidth: width,
+                              btnColor: controller.isLoading
+                                  ? kGray.withOpacity(.6)
+                                  : kPrimary,
+                            )),
+                      ],
+                    )),
               )
             ],
           ),

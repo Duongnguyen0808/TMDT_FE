@@ -16,7 +16,15 @@ class AllHotDealsPage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final hookResult = useFetchHotDeals();
-    final hotDeals = hookResult.data ?? [];
+    // Danh sách ưu đãi nhận từ API (có thể chứa mọi mức giá)
+    final rawHotDeals = hookResult.data ?? [];
+    // Lọc chỉ các sản phẩm có giá sau giảm <= 200,000đ
+    final hotDeals = rawHotDeals.where((a) {
+      final discount = a.discount; // %
+      final original = a.price; // giá gốc
+      final discounted = original * (1 - (discount / 100));
+      return discounted <= 200000; // ngưỡng 200k
+    }).toList();
     final isLoading = hookResult.isLoading;
 
     return Scaffold(
@@ -54,13 +62,12 @@ class AllHotDealsPage extends HookWidget {
                         ),
                         SizedBox(height: 16.h),
                         ReusableText(
-                          text: 'Chưa có ưu đãi nào',
+                          text: 'Không có ưu đãi dưới 200k',
                           style: appStyle(16, kGray, FontWeight.w500),
                         ),
                         SizedBox(height: 8.h),
                         ReusableText(
-                          text:
-                              'Các chương trình khuyến mãi sẽ xuất hiện ở đây',
+                          text: 'Hãy quay lại sau hoặc xem ưu đãi khác',
                           style: appStyle(13, kGray, FontWeight.normal),
                         ),
                       ],

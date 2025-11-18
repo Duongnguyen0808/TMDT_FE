@@ -27,6 +27,8 @@ class UserOrderDetailPage extends StatefulWidget {
 class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
   bool _isCancelling = false;
   bool _isConfirming = false;
+  bool _isRequestingReturn = false;
+  String? _localReturnStatus; // Tracks return state after user action
   DistanceTime? _distanceTime;
   bool _isLoadingDistance = true;
 
@@ -34,6 +36,7 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
   void initState() {
     super.initState();
     _loadDistanceAndTime();
+    _localReturnStatus = widget.order.returnStatus;
   }
 
   Future<void> _confirmReceived() async {
@@ -485,6 +488,75 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
                   text: _isConfirming ? "Đang xử lý..." : "Đã nhận hàng",
                 ),
 
+              // Return Request Button (for Delivered orders)
+              if (order.orderStatus == 'Delivered' &&
+                  (_localReturnStatus == null ||
+                      _localReturnStatus == 'None' ||
+                      _localReturnStatus!.isEmpty))
+                Padding(
+                  padding: EdgeInsets.only(top: 8.h),
+                  child: CustomButton(
+                    onTap: _isRequestingReturn ? () {} : _showReturnDialog,
+                    btnColor: kSecondary,
+                    btnHeight: 45.h,
+                    text: _isRequestingReturn
+                        ? "Đang gửi yêu cầu..."
+                        : "Yêu cầu trả hàng/Hoàn tiền",
+                  ),
+                ),
+
+              // Return/Refund Status Panel
+              if (order.orderStatus == 'Delivered' &&
+                  (_localReturnStatus != null &&
+                      _localReturnStatus != 'None' &&
+                      _localReturnStatus!.isNotEmpty))
+                Padding(
+                  padding: EdgeInsets.only(top: 8.h),
+                  child: _buildInfoCard(
+                    title: 'Trả hàng/Hoàn tiền',
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.assignment_return,
+                              color: kGray, size: 18.sp),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: ReusableText(
+                              text: _mapReturnStatus(_localReturnStatus!),
+                              style: appStyle(13, kDark, FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_localReturnStatus == 'Rejected') ...[
+                        SizedBox(height: 6.h),
+                        ReusableText(
+                          text:
+                              'Yêu cầu bị từ chối. Nếu có nhầm lẫn, vui lòng liên hệ cửa hàng để được hỗ trợ.',
+                          style: appStyle(12, kGray, FontWeight.w400),
+                        ),
+                      ],
+                      if (widget.order.returnReason != null &&
+                          widget.order.returnReason!.isNotEmpty) ...[
+                        SizedBox(height: 6.h),
+                        ReusableText(
+                          text: 'Lý do: ${widget.order.returnReason}',
+                          style: appStyle(12, kGray, FontWeight.w400),
+                        ),
+                      ],
+                      if (_localReturnStatus == 'Refunded' &&
+                          widget.order.refundAmount != null) ...[
+                        SizedBox(height: 6.h),
+                        ReusableText(
+                          text:
+                              'Đã hoàn: ${widget.order.refundAmount!.toStringAsFixed(0)}đ',
+                          style: appStyle(12, kGray, FontWeight.w400),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
               SizedBox(height: 20.h),
             ],
           ),
@@ -763,6 +835,165 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
           _isCancelling = false;
         });
       }
+    }
+  }
+
+  String _mapReturnStatus(String status) {
+    switch (status) {
+      case 'Requested':
+        return 'Bạn đã gửi yêu cầu trả hàng/hoàn tiền';
+      case 'Approved':
+        return 'Cửa hàng đã duyệt yêu cầu trả hàng';
+      case 'Rejected':
+        return 'Yêu cầu trả hàng đã bị từ chối';
+      case 'Returned':
+        return 'Đã xác nhận nhận lại hàng';
+      case 'Refunded':
+        return 'Đã hoàn tiền';
+      default:
+        return status;
+    }
+  }
+
+  void _showReturnDialog() {
+    String? selectedReason;
+    final TextEditingController reasonCtrl = TextEditingController();
+    final List<String> reasons = [
+      'Sản phẩm lỗi/không hoạt động',
+      'Không đúng sản phẩm đặt',
+      'Thiếu/rách/móp khi nhận',
+      'Không còn nhu cầu',
+      'Lý do khác',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              title: ReusableText(
+                text: "Yêu cầu trả hàng/Hoàn tiền",
+                style: appStyle(16, kDark, FontWeight.bold),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ReusableText(
+                      text: "Vui lòng chọn lý do:",
+                      style: appStyle(13, kGray, FontWeight.w400),
+                    ),
+                    SizedBox(height: 12.h),
+                    ...reasons.map((reason) {
+                      return RadioListTile<String>(
+                        title: Text(reason,
+                            style: appStyle(12, kDark, FontWeight.w400)),
+                        value: reason,
+                        groupValue: selectedReason,
+                        activeColor: kPrimary,
+                        contentPadding: EdgeInsets.zero,
+                        onChanged: (value) {
+                          setState(() {
+                            selectedReason = value;
+                            if (value != 'Lý do khác') reasonCtrl.clear();
+                          });
+                        },
+                      );
+                    }).toList(),
+                    if (selectedReason == 'Lý do khác') ...[
+                      SizedBox(height: 8.h),
+                      TextField(
+                        controller: reasonCtrl,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          hintText: 'Nhập lý do chi tiết...',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: ReusableText(
+                    text: "Đóng",
+                    style: appStyle(13, kGray, FontWeight.w500),
+                  ),
+                ),
+                TextButton(
+                  onPressed: (selectedReason == null)
+                      ? null
+                      : () async {
+                          final reason = selectedReason == 'Lý do khác'
+                              ? reasonCtrl.text.trim()
+                              : selectedReason!;
+                          if (reason.isEmpty) return;
+                          Get.back();
+                          await _requestReturn(reason);
+                        },
+                  child: ReusableText(
+                    text: "Gửi yêu cầu",
+                    style: appStyle(
+                      13,
+                      (selectedReason == null) ? kGray : kPrimary,
+                      FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _requestReturn(String reason) async {
+    setState(() => _isRequestingReturn = true);
+    try {
+      final box = GetStorage();
+      final accessToken = box.read('token');
+      final url =
+          Uri.parse('$appBaseUrl/api/orders/${widget.order.id}/return-request');
+      final resp = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode({'reason': reason}),
+      );
+      if (resp.statusCode == 200) {
+        Get.snackbar(
+          'Thành công',
+          'Đã gửi yêu cầu trả hàng/hoàn tiền',
+          backgroundColor: kPrimary,
+          colorText: kWhite,
+          icon: const Icon(Icons.check_circle, color: kWhite),
+        );
+        if (mounted) setState(() => _localReturnStatus = 'Requested');
+      } else {
+        final data = jsonDecode(resp.body);
+        Get.snackbar(
+          'Lỗi',
+          data['message'] ?? 'Không thể gửi yêu cầu',
+          backgroundColor: kRed,
+          colorText: kWhite,
+          icon: const Icon(Icons.error, color: kWhite),
+        );
+      }
+    } catch (e) {
+      Get.snackbar('Lỗi', 'Đã xảy ra lỗi: $e',
+          backgroundColor: kRed, colorText: kWhite);
+    } finally {
+      if (mounted) setState(() => _isRequestingReturn = false);
     }
   }
 }

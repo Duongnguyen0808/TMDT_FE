@@ -2,7 +2,10 @@ import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/models/store_model.dart';
-import 'package:appliances_flutter/views/store/directions_page.dart';
+import 'package:appliances_flutter/controllers/chat_controller.dart';
+import 'package:appliances_flutter/views/chat/chat_detail_page.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:appliances_flutter/views/auth/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
@@ -37,15 +40,36 @@ class StoreTopBar extends StatelessWidget {
           ),
           ReusableText(
               text: store!.title, style: appStyle(13, kDark, FontWeight.w600)),
-          GestureDetector(
-            onTap: () {
-              Get.to(() => const DirectionsPage());
-            },
-            child: const Icon(
-              Ionicons.location,
-              size: 28,
-              color: kLightWhite,
-            ),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () async {
+                  final box = GetStorage();
+                  final token = box.read('token');
+                  if (token == null) {
+                    Get.to(() => const LoginPage());
+                    return;
+                  }
+                  final chat = Get.put(ChatController());
+                  final convId = await chat
+                      .getOrCreateConversationWithVendor(store!.owner);
+                  if (convId != null) {
+                    Get.to(() => ChatDetailPage(
+                          conversationId: convId,
+                          title: store!.title,
+                        ));
+                  } else {
+                    Get.snackbar('Lỗi', 'Không thể mở cuộc trò chuyện',
+                        backgroundColor: kRed, colorText: kWhite);
+                  }
+                },
+                child: const Icon(
+                  Ionicons.chatbubble_ellipses,
+                  size: 26,
+                  color: kLightWhite,
+                ),
+              ),
+            ],
           )
         ],
       ),

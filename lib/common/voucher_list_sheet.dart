@@ -42,8 +42,9 @@ class _VoucherListSheetState extends State<VoucherListSheet> {
     });
 
     try {
+      // Chỉ hiển thị voucher người dùng đã nhận và còn dùng được
       String url =
-          '$appBaseUrl/api/voucher/available?orderTotal=${widget.orderTotal}';
+          '$appBaseUrl/api/voucher/my?usable=1&orderTotal=${widget.orderTotal}';
       if (widget.storeId != null && widget.storeId!.isNotEmpty) {
         url += '&storeId=${widget.storeId}';
       }

@@ -33,6 +33,9 @@ class ClientOrders {
   final String? cancellationReason;
   final String? promoCode;
   final double? discountAmount;
+  final String? returnStatus;
+  final String? returnReason;
+  final double? refundAmount;
 
   ClientOrders({
     required this.id,
@@ -57,6 +60,9 @@ class ClientOrders {
     this.cancellationReason,
     this.promoCode,
     this.discountAmount,
+    this.returnStatus,
+    this.returnReason,
+    this.refundAmount,
   });
 
   factory ClientOrders.fromJson(Map<String, dynamic> json) => ClientOrders(
@@ -87,6 +93,9 @@ class ClientOrders {
         cancellationReason: json["cancellationReason"],
         promoCode: json["promoCode"],
         discountAmount: json["discountAmount"]?.toDouble(),
+        returnStatus: json["returnStatus"],
+        returnReason: json["returnReason"],
+        refundAmount: json["refundAmount"]?.toDouble(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -112,6 +121,9 @@ class ClientOrders {
         "cancellationReason": cancellationReason,
         "promoCode": promoCode,
         "discountAmount": discountAmount,
+        "returnStatus": returnStatus,
+        "returnReason": returnReason,
+        "refundAmount": refundAmount,
       };
 }
 

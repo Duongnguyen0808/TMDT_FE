@@ -23,6 +23,8 @@ import 'package:appliances_flutter/models/order_model.dart' as order_model;
 import 'package:appliances_flutter/views/orders/order_page.dart';
 import 'package:appliances_flutter/views/store/rating_page.dart';
 import 'package:appliances_flutter/views/store/store_page.dart';
+import 'package:appliances_flutter/controllers/chat_controller.dart';
+import 'package:appliances_flutter/views/chat/chat_detail_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -187,14 +189,44 @@ class _AppliancesPageState extends State<AppliancesPage>
                 Positioned(
                   bottom: 10,
                   right: 12.w,
-                  child: CustomButton(
-                    onTap: () {
-                      Get.to(() => StorePage(
-                            store: store,
-                          ));
-                    },
-                    btnWidth: 120.w,
-                    text: "Xem cửa hàng",
+                  child: Row(
+                    children: [
+                      CustomButton(
+                        onTap: () async {
+                          final box = GetStorage();
+                          final token = box.read('token');
+                          if (token == null) {
+                            Get.to(() => const LoginPage());
+                            return;
+                          }
+                          if (store == null) return;
+                          final chat = Get.put(ChatController());
+                          final convId = await chat
+                              .getOrCreateConversationWithVendor(store.owner);
+                          if (convId != null) {
+                            Get.to(() => ChatDetailPage(
+                                  conversationId: convId,
+                                  title: store.title,
+                                ));
+                          } else {
+                            Get.snackbar('Lỗi', 'Không thể mở cuộc trò chuyện',
+                                backgroundColor: kRed, colorText: kWhite);
+                          }
+                        },
+                        btnWidth: 120.w,
+                        text: "Chat cửa hàng",
+                      ),
+                      SizedBox(width: 8.w),
+                      CustomButton(
+                        onTap: () {
+                          Get.to(() => StorePage(
+                                store: store,
+                              ));
+                        },
+                        btnWidth: 120.w,
+                        text: "Xem cửa hàng",
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -229,6 +261,31 @@ class _AppliancesPageState extends State<AppliancesPage>
                                 style: appStyle(14, kDark, FontWeight.w500),
                               ),
                               SizedBox(width: 8.w),
+                              if (widget.appliances.stock != null) ...[
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 6.w, vertical: 2.h),
+                                  decoration: BoxDecoration(
+                                    color: (widget.appliances.stock == 0
+                                            ? kRed
+                                            : kPrimary)
+                                        .withOpacity(.1),
+                                    borderRadius: BorderRadius.circular(10.r),
+                                  ),
+                                  child: ReusableText(
+                                    text: widget.appliances.stock == 0
+                                        ? 'Hết hàng'
+                                        : 'Còn lại: ${widget.appliances.stock}',
+                                    style: appStyle(
+                                        11,
+                                        widget.appliances.stock == 0
+                                            ? kRed
+                                            : kPrimary,
+                                        FontWeight.w600),
+                                  ),
+                                ),
+                                SizedBox(width: 8.w),
+                              ],
                               GestureDetector(
                                 onTap: () async {
                                   final result = await Get.to(
@@ -366,12 +423,27 @@ class _AppliancesPageState extends State<AppliancesPage>
                     ),
                     Row(
                       children: [
-                        GestureDetector(
-                          onTap: () {
-                            _appliancesController.increment();
-                          },
-                          child: const Icon(AntDesign.pluscircleo),
-                        ),
+                        Obx(() {
+                          final int? stock = widget.appliances.stock;
+                          final canIncrease = stock == null ||
+                              _appliancesController.count.value < stock;
+                          return GestureDetector(
+                            onTap: canIncrease
+                                ? () {
+                                    _appliancesController.increment();
+                                  }
+                                : () {
+                                    Get.snackbar('Giới hạn',
+                                        'Đạt số lượng tối đa trong kho',
+                                        backgroundColor: kPrimary,
+                                        colorText: kLightWhite);
+                                  },
+                            child: Icon(
+                              AntDesign.pluscircleo,
+                              color: canIncrease ? kDark : kGrayLight,
+                            ),
+                          );
+                        }),
                         Padding(
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 8.0),
@@ -380,12 +452,21 @@ class _AppliancesPageState extends State<AppliancesPage>
                                   text: "${_appliancesController.count.value}",
                                   style: appStyle(14, kDark, FontWeight.w600)),
                             )),
-                        GestureDetector(
-                          onTap: () {
-                            _appliancesController.decrement();
-                          },
-                          child: const Icon(AntDesign.minuscircleo),
-                        )
+                        Obx(() {
+                          final canDecrease =
+                              _appliancesController.count.value > 1;
+                          return GestureDetector(
+                            onTap: canDecrease
+                                ? () {
+                                    _appliancesController.decrement();
+                                  }
+                                : null,
+                            child: Icon(
+                              AntDesign.minuscircleo,
+                              color: canDecrease ? kDark : kGrayLight,
+                            ),
+                          );
+                        })
                       ],
                     ),
                   ],
@@ -423,12 +504,21 @@ class _AppliancesPageState extends State<AppliancesPage>
                           child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
+                          final int? stock = widget.appliances.stock;
                           if (user == null) {
                             Get.to(() => const LoginPage());
                           } else if (user.phoneVerification == false) {
                             showVerificationSheet(context);
                           } else if (!hasAddress) {
                             showAddressSheet(context);
+                          } else if (stock != null && stock == 0) {
+                            Get.snackbar(
+                                'Hết hàng', 'Sản phẩm này tạm thời hết hàng',
+                                backgroundColor: kRed, colorText: kLightWhite);
+                          } else if (stock != null &&
+                              _appliancesController.count.value > stock) {
+                            Get.snackbar('Lỗi', 'Số lượng vượt quá tồn kho',
+                                backgroundColor: kRed, colorText: kLightWhite);
                           } else {
                             double price = (widget.appliances.price +
                                     _appliancesController.additivePrice) *
@@ -479,6 +569,19 @@ class _AppliancesPageState extends State<AppliancesPage>
                       )),
                       GestureDetector(
                         onTap: () {
+                          final int? stock = widget.appliances.stock;
+                          if (stock != null && stock == 0) {
+                            Get.snackbar('Hết hàng', 'Không thể thêm vào giỏ',
+                                backgroundColor: kRed, colorText: kLightWhite);
+                            return;
+                          }
+                          if (stock != null &&
+                              _appliancesController.count.value > stock) {
+                            Get.snackbar(
+                                'Giới hạn', 'Số lượng vượt quá tồn kho',
+                                backgroundColor: kRed, colorText: kLightWhite);
+                            return;
+                          }
                           double price = (widget.appliances.price +
                                   _appliancesController.additivePrice) *
                               _appliancesController.count.value;
