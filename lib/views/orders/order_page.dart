@@ -61,7 +61,6 @@ class OrderPage extends HookWidget {
           lon1: store!.coords.longitude,
           lat2: selectedAddress.latitude,
           lon2: selectedAddress.longitude,
-          pricePerKm: 2,
         )
             .then((result) {
           if (result != null) {
@@ -76,12 +75,11 @@ class OrderPage extends HookWidget {
     DistanceTime data = distanceData.value ??
         (hasStore
             ? Distance().calculateDistanceTimePrice(
-                store!.coords.latitude,
-                store!.coords.longitude,
-                selectedAddress?.latitude ?? 0.0,
-                selectedAddress?.longitude ?? 0.0,
-                10,
-                2,
+                lat1: store!.coords.latitude,
+                lon1: store!.coords.longitude,
+                lat2: selectedAddress?.latitude ?? 0.0,
+                lon2: selectedAddress?.longitude ?? 0.0,
+                speedKmPerHr: 30,
               )
             : DistanceTime(price: 0.0, distance: 0.0, time: 0.0));
 
@@ -450,6 +448,7 @@ class OrderPage extends HookWidget {
                             promoCode: selectedVoucher.value?.code,
                             discountAmount:
                                 discount.value > 0 ? discount.value : null,
+                            deliveryDistanceKm: data.distance,
                           );
 
                           final orderData = orderRequestToJson(order);

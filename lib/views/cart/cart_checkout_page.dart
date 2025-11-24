@@ -56,12 +56,11 @@ class CartCheckoutPage extends HookWidget {
       final items = entry.value;
       final coords = items.first.productId.store.coords;
       final distance = Distance().calculateDistanceTimePrice(
-        coords.latitude,
-        coords.longitude,
-        address.latitude,
-        address.longitude,
-        10,
-        2,
+        lat1: coords.latitude,
+        lon1: coords.longitude,
+        lat2: address.latitude,
+        lon2: address.longitude,
+        speedKmPerHr: 30,
       );
       totalDeliveryFee += distance.price;
     }
@@ -500,12 +499,11 @@ class CartCheckoutPage extends HookWidget {
                                   items.first.productId.store.coords;
                               final storeDistance =
                                   Distance().calculateDistanceTimePrice(
-                                storeCoords.latitude,
-                                storeCoords.longitude,
-                                address.latitude,
-                                address.longitude,
-                                10,
-                                2,
+                                lat1: storeCoords.latitude,
+                                lon1: storeCoords.longitude,
+                                lat2: address.latitude,
+                                lon2: address.longitude,
+                                speedKmPerHr: 30,
                               );
 
                               // Apply discount proportionally
@@ -555,6 +553,7 @@ class CartCheckoutPage extends HookWidget {
                                 promoCode: selectedVoucher.value?.code,
                                 discountAmount:
                                     storeDiscount > 0 ? storeDiscount : null,
+                                deliveryDistanceKm: storeDistance.distance,
                               );
 
                               final orderData = orderRequestToJson(order);
@@ -628,12 +627,11 @@ class CartCheckoutPage extends HookWidget {
                               cartItems.first.productId.store.id;
                           final firstDistance =
                               Distance().calculateDistanceTimePrice(
-                            firstCoords.latitude,
-                            firstCoords.longitude,
-                            address.latitude,
-                            address.longitude,
-                            10,
-                            2,
+                            lat1: firstCoords.latitude,
+                            lon1: firstCoords.longitude,
+                            lat2: address.latitude,
+                            lon2: address.longitude,
+                            speedKmPerHr: 30,
                           );
 
                           final items = cartItems.map((c) {
@@ -670,6 +668,7 @@ class CartCheckoutPage extends HookWidget {
                             promoCode: selectedVoucher.value?.code,
                             discountAmount:
                                 discount.value > 0 ? discount.value : null,
+                            deliveryDistanceKm: firstDistance.distance,
                           );
 
                           if (paymentMethod.value == 'COD') {

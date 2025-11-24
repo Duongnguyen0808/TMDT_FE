@@ -52,6 +52,7 @@ dependencies:
   timeago: ^3.6.1
   carousel_slider: ^5.0.0
   socket_io_client: ^2.0.3
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
@@ -59,7 +60,9 @@ dev_dependencies:
 
   flutter_lints: ^2.0.0
 
-## Removed invalid dependency_overrides for vietmap_flutter_gl_web (local path not present)
+dependency_overrides:
+  vietmap_flutter_gl_web:
+    path: packages/vietmap_flutter_gl_web
 
 flutter:
   uses-material-design: true

@@ -49,13 +49,36 @@ class ChatController extends GetxController {
     }
   }
 
-  Future<String?> getOrCreateConversationWithVendor(String vendorId) async {
+  Future<String?> getOrCreateConversationWithVendor({
+    required String vendorId,
+    String? storeId,
+  }) async {
     final url = Uri.parse('$appBaseUrl/api/chat/conversation');
-    final res = await http.post(url,
-        headers: _headers(), body: jsonEncode({'vendorId': vendorId}));
+    final body = <String, String>{'vendorId': vendorId};
+    if (storeId != null && storeId.isNotEmpty) {
+      body['storeId'] = storeId;
+    }
+
+    final res =
+        await http.post(url, headers: _headers(), body: jsonEncode(body));
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body)['data'];
       return data['id']?.toString();
+    }
+
+    try {
+      final error = jsonDecode(res.body);
+      final message = error['message']?.toString();
+      if (message != null && message.isNotEmpty) {
+        Get.snackbar('Chat cửa hàng', message,
+            backgroundColor: kRed, colorText: kLightWhite);
+      } else {
+        Get.snackbar('Chat cửa hàng', 'Không thể mở cuộc trò chuyện',
+            backgroundColor: kRed, colorText: kLightWhite);
+      }
+    } catch (_) {
+      Get.snackbar('Chat cửa hàng', 'Không thể mở cuộc trò chuyện',
+          backgroundColor: kRed, colorText: kLightWhite);
     }
     return null;
   }

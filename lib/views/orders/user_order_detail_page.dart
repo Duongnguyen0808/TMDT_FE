@@ -15,6 +15,13 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
+const Set<String> _orderCancellableStatuses = {
+  'Pending',
+  'Preparing',
+  'ReadyForPickup',
+  'WaitingShipper',
+};
+
 class UserOrderDetailPage extends StatefulWidget {
   final ClientOrders order;
 
@@ -95,15 +102,10 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
   }
 
   Future<void> _loadDistanceAndTime() async {
-    print('=== DEBUG: Loading distance and time ===');
-    print('Store coords: ${widget.order.storeCoords}');
-    print('Recipient coords: ${widget.order.recipientCoords}');
-
     if (widget.order.storeCoords.isEmpty ||
         widget.order.storeCoords.length < 2 ||
         widget.order.recipientCoords.isEmpty ||
         widget.order.recipientCoords.length < 2) {
-      print('DEBUG: Coords invalid or missing');
       setState(() {
         _isLoadingDistance = false;
       });
@@ -111,7 +113,6 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
     }
 
     try {
-      print('DEBUG: Calling Vietmap API...');
       final result = await VietmapService.calculateDistance(
         storeLat: widget.order.storeCoords[1],
         storeLng: widget.order.storeCoords[0],
@@ -120,13 +121,11 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
         pricePerKm: 5000, // Giá mỗi km
       );
 
-      print('DEBUG: Vietmap result: $result');
       setState(() {
         _distanceTime = result;
         _isLoadingDistance = false;
       });
     } catch (e) {
-      print('ERROR loading distance: $e');
       setState(() {
         _isLoadingDistance = false;
       });
@@ -156,8 +155,10 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
   @override
   Widget build(BuildContext context) {
     final order = widget.order;
-    final bool isPending = order.orderStatus == 'Pending';
     final bool isCancelled = order.orderStatus == 'Cancelled';
+    final bool canCancel =
+        _orderCancellableStatuses.contains(order.orderStatus);
+    final String? logisticStatus = order.logisticStatus;
 
     return Scaffold(
       backgroundColor: kPrimary,
@@ -184,7 +185,8 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
               Container(
                 padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
-                  color: _getStatusColor(order.orderStatus).withOpacity(0.1),
+                  color:
+                      _getStatusColor(order.orderStatus).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12.r),
                   border: Border.all(
                     color: _getStatusColor(order.orderStatus),
@@ -216,6 +218,32 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
                             text: _getStatusDescription(order.orderStatus),
                             style: appStyle(12, kGray, FontWeight.w400),
                           ),
+                          if (logisticStatus != null &&
+                              logisticStatus.isNotEmpty &&
+                              logisticStatus != order.orderStatus) ...[
+                            SizedBox(height: 6.h),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8.w, vertical: 4.h),
+                              decoration: BoxDecoration(
+                                color: kWhite,
+                                borderRadius: BorderRadius.circular(20.r),
+                                border: Border.all(
+                                  color: _getStatusColor(logisticStatus)
+                                      .withValues(alpha: 0.4),
+                                ),
+                              ),
+                              child: ReusableText(
+                                text:
+                                    'Logistics: ${_getStatusText(logisticStatus)}',
+                                style: appStyle(
+                                  11,
+                                  _getStatusColor(logisticStatus),
+                                  FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -224,6 +252,11 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
               ),
 
               SizedBox(height: 16.h),
+
+              if (!isCancelled) ...[
+                _buildPickupTimelineCard(order),
+                SizedBox(height: 16.h),
+              ],
 
               // Order Info Card
               _buildInfoCard(
@@ -463,14 +496,22 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
                           "Lý do hủy: ${order.cancellationReason ?? 'Không rõ'}",
                       style: appStyle(13, kRed, FontWeight.w400),
                     ),
+                    if (order.cancelledAt != null) ...[
+                      SizedBox(height: 4.h),
+                      ReusableText(
+                        text:
+                            'Thời gian hủy: ${DateFormat('dd/MM/yyyy - HH:mm').format(order.cancelledAt!)}',
+                        style: appStyle(12, kGray, FontWeight.w400),
+                      ),
+                    ],
                   ],
                 ),
               ],
 
               SizedBox(height: 20.h),
 
-              // Cancel Button (only for Pending orders)
-              if (isPending)
+              // Cancel Button (for cancellable statuses)
+              if (!isCancelled && canCancel)
                 CustomButton(
                   onTap: _isCancelling ? () {} : _showCancelDialog,
                   btnColor: kRed,
@@ -576,7 +617,7 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: kGray.withOpacity(0.1),
+            color: kGray.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -629,12 +670,170 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
     );
   }
 
+  Widget _buildPickupTimelineCard(ClientOrders order) {
+    final steps = _buildTimelineSteps(order);
+    if (steps.isEmpty) return const SizedBox.shrink();
+    return _buildInfoCard(
+      title: "Tiến trình lấy & giao hàng",
+      children: steps
+          .asMap()
+          .entries
+          .map((entry) => _buildTimelineRow(
+                entry.value,
+                entry.key == steps.length - 1,
+              ))
+          .toList(),
+    );
+  }
+
+  List<_TimelineStepData> _buildTimelineSteps(ClientOrders order) {
+    final status = order.orderStatus;
+    final bool isCancelled = status == 'Cancelled';
+    if (isCancelled) return [];
+
+    final bool preparingStarted = status != 'Pending' && status != 'Cancelled';
+    final bool readyForPickup = order.pickupReadyAt != null ||
+        status == 'ReadyForPickup' ||
+        status == 'WaitingShipper' ||
+        status == 'PickedUp' ||
+        status == 'Delivering' ||
+        status == 'Delivered';
+    final bool shipperAssigned = order.pickupAssignedAt != null ||
+        status == 'WaitingShipper' ||
+        status == 'PickedUp' ||
+        status == 'Delivering' ||
+        status == 'Delivered';
+    final bool pickedUp = order.pickupConfirmedAt != null ||
+        status == 'PickedUp' ||
+        status == 'Delivering' ||
+        status == 'Delivered';
+    final bool delivering = status == 'Delivering' || status == 'Delivered';
+    final bool delivered = status == 'Delivered';
+
+    return [
+      _TimelineStepData(
+        title: 'Đặt hàng thành công',
+        description: 'Chúng tôi đã nhận đơn của bạn',
+        timestamp: order.createdAt,
+        completed: true,
+      ),
+      _TimelineStepData(
+        title: 'Cửa hàng chuẩn bị',
+        description: order.shopReadyBy != null
+            ? 'Dự kiến xong trước ${order.shopReadyBy}'
+            : 'Cửa hàng đang chế biến món ăn',
+        timestamp: preparingStarted ? order.createdAt : null,
+        completed: preparingStarted,
+      ),
+      _TimelineStepData(
+        title: 'Sẵn sàng bàn giao',
+        description: order.pickupCode != null && order.pickupCode!.isNotEmpty
+            ? 'Mã bàn giao: ${order.pickupCode}'
+            : 'Chờ cửa hàng xác nhận mã bàn giao',
+        timestamp: order.pickupReadyAt,
+        completed: readyForPickup,
+      ),
+      _TimelineStepData(
+        title: 'Đã gán shipper',
+        description: order.shipperPickupBy != null
+            ? 'Tài xế nhận trước ${order.shipperPickupBy}'
+            : 'Hệ thống đang tìm tài xế gần nhất',
+        timestamp: order.pickupAssignedAt,
+        completed: shipperAssigned,
+      ),
+      _TimelineStepData(
+        title: 'Shipper nhận hàng',
+        description:
+            order.pickupNotes ?? 'Tài xế đã xác nhận mã và rời cửa hàng',
+        timestamp: order.pickupConfirmedAt ?? order.pickupCheckinAt,
+        completed: pickedUp,
+      ),
+      _TimelineStepData(
+        title: 'Đang giao hàng',
+        description: 'Đơn hàng đang trên đường đến bạn',
+        timestamp: delivering ? order.pickupConfirmedAt : null,
+        completed: delivering,
+      ),
+      _TimelineStepData(
+        title: 'Giao thành công',
+        description: 'Hãy giúp chúng tôi xác nhận khi đã nhận đủ hàng',
+        timestamp: delivered ? order.updatedAt : null,
+        completed: delivered,
+      ),
+    ];
+  }
+
+  Widget _buildTimelineRow(_TimelineStepData step, bool isLast) {
+    final Color indicatorColor =
+        step.completed ? kPrimary : kGray.withValues(alpha: 0.4);
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 12.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 16.w,
+                height: 16.w,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: step.completed ? indicatorColor : kWhite,
+                  border: Border.all(color: indicatorColor, width: 2),
+                ),
+              ),
+              if (!isLast)
+                Container(
+                  width: 2,
+                  height: 40.h,
+                  color: indicatorColor.withValues(alpha: 0.3),
+                ),
+            ],
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ReusableText(
+                  text: step.title,
+                  style: appStyle(13, kDark, FontWeight.w600),
+                ),
+                SizedBox(height: 2.h),
+                ReusableText(
+                  text: step.description,
+                  style: appStyle(12, kGray, FontWeight.w400),
+                ),
+                SizedBox(height: 2.h),
+                ReusableText(
+                  text: _formatTimelineTime(step.timestamp),
+                  style: appStyle(11, kGray, FontWeight.w400),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTimelineTime(DateTime? time) {
+    if (time == null) return 'Đang cập nhật';
+    return DateFormat('dd/MM - HH:mm').format(time);
+  }
+
   Color _getStatusColor(String status) {
     switch (status) {
       case 'Pending':
         return Colors.orange;
       case 'Preparing':
         return Colors.blue;
+      case 'ReadyForPickup':
+        return Colors.teal;
+      case 'WaitingShipper':
+        return Colors.deepOrange;
+      case 'PickedUp':
+        return Colors.indigo;
       case 'Delivering':
         return Colors.purple;
       case 'Delivered':
@@ -652,6 +851,12 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
         return Icons.schedule;
       case 'Preparing':
         return Icons.restaurant;
+      case 'ReadyForPickup':
+        return Icons.store_mall_directory;
+      case 'WaitingShipper':
+        return Icons.delivery_dining;
+      case 'PickedUp':
+        return Icons.inventory_2;
       case 'Delivering':
         return Icons.local_shipping;
       case 'Delivered':
@@ -669,6 +874,12 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
         return 'Chờ xác nhận';
       case 'Preparing':
         return 'Đang chuẩn bị';
+      case 'ReadyForPickup':
+        return 'Sẵn sàng lấy hàng';
+      case 'WaitingShipper':
+        return 'Đang gán shipper';
+      case 'PickedUp':
+        return 'Shipper đã nhận';
       case 'Delivering':
         return 'Đang giao hàng';
       case 'Delivered':
@@ -686,6 +897,12 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
         return 'Đơn hàng đang chờ cửa hàng xác nhận';
       case 'Preparing':
         return 'Cửa hàng đang chuẩn bị đơn hàng của bạn';
+      case 'ReadyForPickup':
+        return 'Cửa hàng đã sẵn sàng bàn giao cho shipper';
+      case 'WaitingShipper':
+        return 'Hệ thống đang kết nối tài xế để nhận đơn';
+      case 'PickedUp':
+        return 'Shipper đã nhận đơn và chuẩn bị giao';
       case 'Delivering':
         return 'Đơn hàng đang được vận chuyển đến bạn';
       case 'Delivered':
@@ -790,22 +1007,22 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
       final String token = box.read('token') ?? '';
 
       final url = Uri.parse(
-        '$appBaseUrl/api/orders/${widget.order.id}?status=Cancelled',
+        '$appBaseUrl/api/orders/${widget.order.id}/cancel',
       );
 
-      final response = await http.put(
+      final response = await http.post(
         url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: json.encode({
-          'cancellationReason': reason,
+          'reason': reason,
         }),
       );
 
       if (response.statusCode == 200) {
-        Get.back(); // Go back to order list
+        Get.back(result: true);
         Get.snackbar(
           'Thành công',
           'Đơn hàng đã được hủy',
@@ -996,4 +1213,18 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
       if (mounted) setState(() => _isRequestingReturn = false);
     }
   }
+}
+
+class _TimelineStepData {
+  final String title;
+  final String description;
+  final DateTime? timestamp;
+  final bool completed;
+
+  const _TimelineStepData({
+    required this.title,
+    required this.description,
+    required this.timestamp,
+    required this.completed,
+  });
 }

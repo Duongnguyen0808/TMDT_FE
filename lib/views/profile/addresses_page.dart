@@ -60,8 +60,14 @@ class Addresses extends HookWidget {
               child: Padding(
                 padding: EdgeInsets.fromLTRB(12.w, 0, 12.w, 30.h),
                 child: CustomButton(
-                  onTap: () {
-                    Get.to(() => const ShippingAddress());
+                  onTap: () async {
+                    final result = await Get.to(() => ShippingAddress(
+                          onAddressSet: hookResult.refetch,
+                          shouldPopOnSave: true,
+                        ));
+                    if (result == true && hookResult.refetch != null) {
+                      hookResult.refetch!();
+                    }
                   },
                   text: "Thêm địa chỉ",
                 ),

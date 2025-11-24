@@ -12,6 +12,13 @@ import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+const Set<String> _cancellableStatuses = {
+  'Pending',
+  'Preparing',
+  'ReadyForPickup',
+  'WaitingShipper',
+};
+
 class ClientOrderTile extends StatefulWidget {
   const ClientOrderTile({
     super.key,
@@ -289,15 +296,14 @@ class _ClientOrderTileState extends State<ClientOrderTile> {
         final box = GetStorage();
         final token = box.read('token');
 
-        final response = await http.put(
-          Uri.parse('$appBaseUrl/api/orders/${widget.fullOrder!.id}'),
+        final response = await http.post(
+          Uri.parse('$appBaseUrl/api/orders/${widget.fullOrder!.id}/cancel'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
           },
           body: jsonEncode({
-            'orderStatus': 'Cancelled',
-            'cancellationReason': reasonController.text.trim(),
+            'reason': reasonController.text.trim(),
           }),
         );
 
@@ -334,11 +340,17 @@ class _ClientOrderTileState extends State<ClientOrderTile> {
     final orderStatus = widget.fullOrder?.orderStatus ?? 'Pending';
     final statusColor = _getStatusColor(orderStatus);
     final statusText = _getStatusText(orderStatus);
+    final canCancel =
+        widget.fullOrder != null && _cancellableStatuses.contains(orderStatus);
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         if (widget.fullOrder != null) {
-          Get.to(() => UserOrderDetailPage(order: widget.fullOrder!));
+          final result =
+              await Get.to(() => UserOrderDetailPage(order: widget.fullOrder!));
+          if (result == true && widget.onCancelled != null) {
+            widget.onCancelled!();
+          }
         }
       },
       child: Container(
@@ -515,8 +527,8 @@ class _ClientOrderTileState extends State<ClientOrderTile> {
               ],
             ),
 
-            // Nút hủy đơn hàng (chỉ hiện khi Pending)
-            if (orderStatus == 'Pending') ...[
+            // Nút hủy đơn hàng (hiển thị cho các trạng thái cho phép)
+            if (canCancel) ...[
               SizedBox(height: 10.h),
               SizedBox(
                 width: double.infinity,

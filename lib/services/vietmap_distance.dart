@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:appliances_flutter/models/distance_time.dart';
 import 'package:appliances_flutter/config/vietmap_config.dart';
+import 'package:appliances_flutter/services/delivery_fee.dart';
 import 'package:http/http.dart' as http;
 
 class VietMapDistance {
@@ -12,7 +13,7 @@ class VietMapDistance {
   ///
   /// [lat1], [lon1]: Tọa độ điểm bắt đầu (store)
   /// [lat2], [lon2]: Tọa độ điểm kết thúc (user address)
-  /// [pricePerKm]: Giá mỗi km
+  /// [perKmOverride]: tuỳ chọn ghi đè giá mỗi km nếu cần thử nghiệm
   ///
   /// Returns [DistanceTime] với distance (km), time (giờ), price (VND)
   Future<DistanceTime?> calculateRealDistance({
@@ -20,7 +21,7 @@ class VietMapDistance {
     required double lon1,
     required double lat2,
     required double lon2,
-    required double pricePerKm,
+    double? perKmOverride,
   }) async {
     try {
       // VietMap Directions API endpoint
@@ -50,8 +51,10 @@ class VietMapDistance {
           final timeInMs = (path['time'] ?? 0).toDouble();
           final timeInHours = timeInMs / (1000 * 60 * 60);
 
-          // Tính giá
-          final price = distanceKm * pricePerKm;
+          final double price = calculateDeliveryFee(
+            distanceKm,
+            perKmOverride: perKmOverride,
+          );
 
           return DistanceTime(
             distance: distanceKm,
@@ -65,11 +68,23 @@ class VietMapDistance {
       }
 
       // Nếu API lỗi, fallback về Haversine
-      return _calculateHaversine(lat1, lon1, lat2, lon2, pricePerKm);
+      return _calculateHaversine(
+        lat1,
+        lon1,
+        lat2,
+        lon2,
+        perKmOverride,
+      );
     } catch (e) {
       print('VietMap Distance API Error: $e');
       // Fallback về Haversine nếu có lỗi
-      return _calculateHaversine(lat1, lon1, lat2, lon2, pricePerKm);
+      return _calculateHaversine(
+        lat1,
+        lon1,
+        lat2,
+        lon2,
+        perKmOverride,
+      );
     }
   }
 
@@ -79,7 +94,7 @@ class VietMapDistance {
     double lon1,
     double lat2,
     double lon2,
-    double pricePerKm,
+    double? perKmOverride,
   ) {
     const double earthRadiusKm = 6371.0;
 
@@ -95,7 +110,10 @@ class VietMapDistance {
     // Giả sử tốc độ 30 km/h cho xe máy trong thành phố
     const double speedKmPerHr = 30.0;
     final time = distance / speedKmPerHr;
-    final price = distance * pricePerKm;
+    final double price = calculateDeliveryFee(
+      distance,
+      perKmOverride: perKmOverride,
+    );
 
     return DistanceTime(distance: distance, time: time, price: price);
   }

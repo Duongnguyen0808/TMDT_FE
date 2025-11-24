@@ -694,7 +694,7 @@ packages:
     source: hosted
     version: "4.3.0"
   intl:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: intl
       sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
@@ -1283,12 +1283,11 @@ packages:
     source: hosted
     version: "4.1.0"
   vietmap_flutter_gl_web:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: vietmap_flutter_gl_web
-      sha256: bbd7cd1cadb5a09fdaef46f2d500ee1684973ee69226450b6dfc9b8f0d53a359
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/vietmap_flutter_gl_web"
+      relative: true
+    source: path
     version: "0.0.1"
   vietmap_flutter_plugin:
     dependency: "direct main"

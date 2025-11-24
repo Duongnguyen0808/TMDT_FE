@@ -201,16 +201,14 @@ class _AppliancesPageState extends State<AppliancesPage>
                           }
                           if (store == null) return;
                           final chat = Get.put(ChatController());
-                          final convId = await chat
-                              .getOrCreateConversationWithVendor(store.owner);
+                          final convId =
+                              await chat.getOrCreateConversationWithVendor(
+                                  vendorId: store.owner, storeId: store.id);
                           if (convId != null) {
                             Get.to(() => ChatDetailPage(
                                   conversationId: convId,
                                   title: store.title,
                                 ));
-                          } else {
-                            Get.snackbar('Lỗi', 'Không thể mở cuộc trò chuyện',
-                                backgroundColor: kRed, colorText: kWhite);
                           }
                         },
                         btnWidth: 120.w,
