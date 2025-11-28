@@ -1,5 +1,7 @@
 // ignore_for_file: unused_local_variable
 
+import 'dart:convert';
+
 import 'package:appliances_flutter/common/address_buttom_sheet.dart';
 import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/custom_text_field.dart';
@@ -22,17 +24,21 @@ import 'package:appliances_flutter/views/auth/phone_verification_page.dart';
 import 'package:appliances_flutter/models/order_model.dart' as order_model;
 import 'package:appliances_flutter/views/orders/order_page.dart';
 import 'package:appliances_flutter/views/store/rating_page.dart';
+import 'package:appliances_flutter/views/store/reviews_page.dart';
 import 'package:appliances_flutter/views/store/store_page.dart';
 import 'package:appliances_flutter/controllers/chat_controller.dart';
 import 'package:appliances_flutter/views/chat/chat_detail_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:appliances_flutter/utils/currency.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:http/http.dart' as http;
+import 'package:timeago/timeago.dart' as timeago;
 
 class AppliancesPage extends StatefulHookWidget {
   const AppliancesPage({super.key, required this.appliances});
@@ -48,14 +54,20 @@ class _AppliancesPageState extends State<AppliancesPage>
   final TextEditingController _preferences = TextEditingController();
   final PageController _pageController = PageController();
   late AppliancesController _appliancesController;
+  bool _reviewsLoading = false;
+  String? _reviewsError;
+  List<dynamic> _recentReviews = [];
+  Map<String, dynamic>? _reviewSummary;
 
   @override
   void initState() {
     super.initState();
+    timeago.setLocaleMessages('vi', timeago.ViMessages());
     WidgetsBinding.instance.addObserver(this);
     // Khởi tạo controller và nạp additives một lần ở initState để tránh cập nhật reactive trong build
     _appliancesController = Get.put(AppliancesController());
     _appliancesController.loadAdditives(widget.appliances.additives);
+    _loadReviewPreview();
   }
 
   @override
@@ -70,6 +82,376 @@ class _AppliancesPageState extends State<AppliancesPage>
       // Refetch default address when app resumes
       setState(() {});
     }
+  }
+
+  Future<void> _loadReviewPreview() async {
+    setState(() {
+      _reviewsLoading = true;
+      _reviewsError = null;
+    });
+    try {
+      final url = Uri.parse(
+          '$appBaseUrl/api/rating/Appliances/${widget.appliances.id}?limit=25');
+      final response = await http.get(url);
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map && decoded['status'] == true) {
+          final List<dynamic> rawRatings = decoded['ratings'] is List
+              ? List<dynamic>.from(decoded['ratings'] as List)
+              : <dynamic>[];
+          setState(() {
+            _recentReviews =
+                rawRatings.length > 3 ? rawRatings.sublist(0, 3) : rawRatings;
+            _reviewSummary = decoded['summary'] is Map
+                ? Map<String, dynamic>.from(
+                    decoded['summary'] as Map,
+                  )
+                : null;
+            _reviewsLoading = false;
+          });
+        } else {
+          setState(() {
+            _reviewsLoading = false;
+            _reviewsError = decoded is Map && decoded['message'] != null
+                ? decoded['message'].toString()
+                : 'Không thể tải đánh giá';
+          });
+        }
+      } else {
+        setState(() {
+          _reviewsLoading = false;
+          _reviewsError = 'Không thể tải đánh giá (mã ${response.statusCode})';
+        });
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _reviewsLoading = false;
+        _reviewsError = 'Không thể tải đánh giá';
+      });
+    }
+  }
+
+  List<Map<String, dynamic>> _recentReviewItems() {
+    return _recentReviews
+        .map<Map<String, dynamic>>((item) {
+          if (item is Map<String, dynamic>) return item;
+          if (item is Map) return Map<String, dynamic>.from(item);
+          return <String, dynamic>{};
+        })
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
+  double _parseDouble(dynamic value, double fallback) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  int _parseInt(dynamic value, int fallback) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  Map<int, int> _normalizedBreakdown(dynamic raw) {
+    final map = {for (var i = 1; i <= 5; i++) i: 0};
+    if (raw is Map) {
+      raw.forEach((key, value) {
+        final star = int.tryParse(key.toString());
+        final count = value is int
+            ? value
+            : (value is num
+                ? value.toInt()
+                : int.tryParse(value.toString()) ?? 0);
+        if (star != null && map.containsKey(star)) {
+          map[star] = count;
+        }
+      });
+    }
+    return map;
+  }
+
+  String _formatReviewTime(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return '';
+    try {
+      final date = DateTime.parse(isoString).toLocal();
+      return timeago.format(date, locale: 'vi');
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Widget _buildReviewPreviewSection() {
+    final summary = _reviewSummary;
+    final average = summary != null
+        ? _parseDouble(summary['average'], widget.appliances.rating)
+        : widget.appliances.rating;
+    final total = summary != null
+        ? _parseInt(summary['total'], widget.appliances.ratingCount)
+        : widget.appliances.ratingCount;
+    final breakdown = _normalizedBreakdown(summary?['breakdown']);
+    final reviews = _recentReviewItems();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: ReusableText(
+                text: 'Đánh giá từ khách hàng',
+                style: appStyle(18, kDark, FontWeight.w600),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () async {
+                await Get.to(() => ReviewsPage(
+                      productId: widget.appliances.id,
+                      ratingType: 'Appliances',
+                      productName: widget.appliances.title,
+                    ));
+                if (mounted) _loadReviewPreview();
+              },
+              icon: const Icon(Icons.rate_review_outlined, size: 16),
+              label: const Text('Xem tất cả'),
+            ),
+          ],
+        ),
+        SizedBox(height: 8.h),
+        if (_reviewsLoading)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: kOffWhite,
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 18.w,
+                  height: 18.w,
+                  child: const CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 12.w),
+                ReusableText(
+                  text: 'Đang tải đánh giá...',
+                  style: appStyle(13, kGray, FontWeight.w500),
+                ),
+              ],
+            ),
+          )
+        else if (_reviewsError != null)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: kRed.withOpacity(.05),
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _reviewsError!,
+                  style: appStyle(13, kRed, FontWeight.w500),
+                ),
+                TextButton(
+                  onPressed: _loadReviewPreview,
+                  child: const Text('Thử lại'),
+                ),
+              ],
+            ),
+          )
+        else if (reviews.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: kOffWhite,
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Chưa có đánh giá nào cho món này',
+                  style: appStyle(13, kGray, FontWeight.w500),
+                ),
+                SizedBox(height: 8.h),
+                TextButton(
+                  onPressed: () async {
+                    final result = await Get.to(() => RatingPage(
+                          productId: widget.appliances.id,
+                          ratingType: 'Appliances',
+                        ));
+                    if (result == true && mounted) {
+                      _loadReviewPreview();
+                    }
+                  },
+                  child: const Text('Viết đánh giá đầu tiên'),
+                ),
+              ],
+            ),
+          )
+        else ...[
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: kOffWhite,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: kPrimary.withOpacity(.05)),
+            ),
+            child: Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      average.toStringAsFixed(1),
+                      style: appStyle(28, kPrimary, FontWeight.w700),
+                    ),
+                    RatingBarIndicator(
+                      rating: average.clamp(0, 5),
+                      itemBuilder: (_, __) => const Icon(
+                        Icons.star,
+                        color: Colors.amber,
+                      ),
+                      itemCount: 5,
+                      itemSize: 18.h,
+                      unratedColor: kGrayLight.withOpacity(.3),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      '$total đánh giá',
+                      style: appStyle(12, kGray, FontWeight.w400),
+                    ),
+                  ],
+                ),
+                SizedBox(width: 16.w),
+                Expanded(
+                  child: Column(
+                    children: List.generate(5, (index) {
+                      final star = 5 - index;
+                      final count = breakdown[star] ?? 0;
+                      final ratio = total > 0 ? count / total : 0.0;
+                      return Padding(
+                        padding: EdgeInsets.symmetric(vertical: 2.h),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 30.w,
+                              child: Text(
+                                '$star★',
+                                style: appStyle(11, kGray, FontWeight.w500),
+                              ),
+                            ),
+                            Expanded(
+                              child: LinearProgressIndicator(
+                                value: ratio,
+                                minHeight: 6,
+                                backgroundColor: kGrayLight.withOpacity(.2),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(kSecondary),
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            Text(
+                              '$count',
+                              style: appStyle(11, kDark, FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 12.h),
+          ...reviews.map(_buildReviewCard).toList(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildReviewCard(Map<String, dynamic> review) {
+    final user = review['userId'];
+    final username = user is Map && user['username'] is String
+        ? (user['username'] as String)
+        : 'Ẩn danh';
+    final ratingValue = review['rating'] is num
+        ? (review['rating'] as num).toDouble()
+        : double.tryParse(review['rating']?.toString() ?? '') ?? 0;
+    final displayRating = ratingValue.clamp(0, 5);
+    final comment = (review['comment'] ?? '').toString();
+    final createdAt = review['createdAt']?.toString();
+    final timeLabel = _formatReviewTime(createdAt);
+    final avatarLabel = username.isNotEmpty ? username[0].toUpperCase() : 'Ẩ';
+
+    return Card(
+      margin: EdgeInsets.only(bottom: 10.h),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+      child: Padding(
+        padding: EdgeInsets.all(12.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 18.r,
+                  backgroundColor: kSecondary.withOpacity(.15),
+                  child: Text(
+                    avatarLabel,
+                    style: appStyle(14, kSecondary, FontWeight.bold),
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ReusableText(
+                        text: username,
+                        style: appStyle(13, kDark, FontWeight.w600),
+                      ),
+                      if (timeLabel.isNotEmpty)
+                        Text(
+                          timeLabel,
+                          style: appStyle(11, kGray, FontWeight.w400),
+                        ),
+                    ],
+                  ),
+                ),
+                RatingBarIndicator(
+                  rating: displayRating.toDouble(),
+                  itemBuilder: (_, __) => const Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                  ),
+                  itemCount: 5,
+                  itemSize: 14.h,
+                  unratedColor: kGrayLight.withOpacity(.3),
+                ),
+              ],
+            ),
+            if (comment.isNotEmpty) ...[
+              SizedBox(height: 8.h),
+              Text(
+                comment,
+                style: appStyle(12, kDark, FontWeight.w400),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -89,6 +471,7 @@ class _AppliancesPageState extends State<AppliancesPage>
     StoreModel? store = hookResult.data;
     final loginController = Get.put(LoginController());
     user = loginController.getUserInfo();
+    final bottomInset = MediaQuery.of(context).padding.bottom;
 
     // Show loading while fetching address (nếu có)
     if (isLoggedIn && defaultHook!.isLoading) {
@@ -101,7 +484,7 @@ class _AppliancesPageState extends State<AppliancesPage>
 
     return Scaffold(
       body: ListView(
-        padding: EdgeInsets.zero,
+        padding: EdgeInsets.only(bottom: bottomInset + 24.h),
         children: [
           ClipRRect(
             borderRadius: BorderRadius.only(bottomRight: Radius.circular(30.r)),
@@ -292,9 +675,10 @@ class _AppliancesPageState extends State<AppliancesPage>
                                       ratingType: 'Appliances',
                                     ),
                                   );
-                                  if (result == true) {
+                                  if (result == true && mounted) {
                                     // Refresh trang nếu đánh giá thành công
                                     setState(() {});
+                                    _loadReviewPreview();
                                   }
                                 },
                                 child: Container(
@@ -363,6 +747,10 @@ class _AppliancesPageState extends State<AppliancesPage>
                 ),
                 SizedBox(
                   height: 15.h,
+                ),
+                _buildReviewPreviewSection(),
+                SizedBox(
+                  height: 16.h,
                 ),
                 ReusableText(
                     text: "Tuỳ chọn thêm",

@@ -55,31 +55,33 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                 itemBuilder: (_, i) {
                   final m = ctrl.messages[i];
                   final mine = m['senderType'] == 'Client';
-                  return Align(
-                    alignment:
-                        mine ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      margin: EdgeInsets.symmetric(vertical: 4.h),
-                      padding:
-                          EdgeInsets.symmetric(vertical: 8.h, horizontal: 12.w),
-                      decoration: BoxDecoration(
-                        color: mine ? kPrimary.withOpacity(0.15) : kOffWhite,
-                        borderRadius: BorderRadius.circular(10.r),
+                  final bottomInset = MediaQuery.of(context).padding.bottom;
+                  return Scaffold(
+                    backgroundColor: kPrimary,
+                    appBar: AppBar(
+                      backgroundColor: kPrimary,
+                      elevation: 0,
+                      leading: IconButton(
+                        icon: const Icon(Icons.arrow_back_ios, color: kLightWhite),
+                        onPressed: () => Get.back(),
                       ),
-                      child: ReusableText(
-                        text: m['content']?.toString() ?? '',
-                        style: appStyle(14, kDark, FontWeight.w400),
-                      ),
+                      title: Text(widget.chatStore.title),
                     ),
-                  );
-                },
-              );
-            }),
-          ),
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: const BoxDecoration(color: kWhite),
-            child: Row(
+                    body: SafeArea(
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: EdgeInsets.all(12.w),
+                              width: double.infinity,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  topRight: Radius.circular(20),
+                                ),
+                              ),
+                              child: Obx(() {
               children: [
                 Expanded(
                   child: TextField(
@@ -95,19 +97,43 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                 CustomButton(
                   text: 'Gửi',
                   btnHeight: 40.h,
-                  btnWidth: 80.w,
-                  onTap: () async {
-                    final content = textCtrl.text.trim();
-                    if (content.isEmpty) return;
-                    await ctrl.sendMessage(widget.conversationId, content);
-                    textCtrl.clear();
-                  },
+                    Container(
+                      padding: EdgeInsets.fromLTRB(12.w, 8.h, 12.w, bottomInset + 8.h),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: controller.chatController,
+                              decoration: InputDecoration(
+                                hintText: 'Nhập tin nhắn...',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  borderSide: BorderSide.none,
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey[200],
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 10.h,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          IconButton(
+                            icon: const Icon(Icons.send, color: kPrimary),
+                            onPressed: controller.sendMessage,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+              ),

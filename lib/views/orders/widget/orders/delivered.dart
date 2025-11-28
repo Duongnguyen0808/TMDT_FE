@@ -11,7 +11,7 @@ class Delivered extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hookResults = useFetchOrders('Delivered');
+    final hookResults = useFetchOrders('Delivering,Delivered');
 
     List<ClientOrders> orders = hookResults.data;
     final isLoading = hookResults.isLoading;

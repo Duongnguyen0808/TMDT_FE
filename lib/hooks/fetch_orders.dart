@@ -34,7 +34,9 @@ FetchHook useFetchOrders(String orderStatus, [String? paymentStatus]) {
       final response = await http.get(url, headers: headers);
 
       if (response.statusCode == 200) {
-        orders.value = clientOrdersFromJson(response.body);
+        final parsed = clientOrdersFromJson(response.body);
+        parsed.sort(_orderComparator);
+        orders.value = parsed;
       } else {
         appiError.value = apiErrorFromJson(response.body);
       }
@@ -62,4 +64,27 @@ FetchHook useFetchOrders(String orderStatus, [String? paymentStatus]) {
     error: error.value,
     refetch: refetch,
   );
+}
+
+int _orderComparator(ClientOrders a, ClientOrders b) {
+  final bool aNeedsConfirm = _needsReceiptConfirmation(a);
+  final bool bNeedsConfirm = _needsReceiptConfirmation(b);
+  if (aNeedsConfirm != bNeedsConfirm) {
+    return aNeedsConfirm ? -1 : 1;
+  }
+  return b.createdAt.compareTo(a.createdAt);
+}
+
+bool _needsReceiptConfirmation(ClientOrders order) {
+  final status = order.orderStatus;
+  final shopStatus = (order.shopDeliveryConfirmStatus ?? 'None');
+  final hasProof = (order.deliveryProofPhoto ?? '').isNotEmpty;
+  final bool awaitingShopConfirmation = shopStatus != 'Confirmed';
+  final bool inDeliveryPhase = status == 'Delivering' || status == 'Delivered';
+  if (awaitingShopConfirmation && hasProof && inDeliveryPhase) {
+    return true;
+  }
+  final bool codPending =
+      order.paymentMethod == 'COD' && order.paymentStatus == 'Pending';
+  return status == 'Delivered' && codPending;
 }

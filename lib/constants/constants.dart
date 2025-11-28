@@ -27,7 +27,7 @@ double width = 375.w;
 // Deprecated: kBaseUrl (giữ lại nếu nơi khác tham chiếu)
 // Note: Avoid auto-detect base URL; use a single LAN URL for real devices
 const String appBaseUrl =
-    "http://192.168.1.5:6013"; // Sử dụng 1 URL LAN cố định cho thiết bị thật. Hãy đổi IP này cho đúng mạng của bạn.
+    "http://192.168.1.7:6013"; // Sử dụng 1 URL LAN cố định cho thiết bị thật. Hãy đổi IP này cho đúng mạng của bạn.
 
 // MapBox API Key (you need to replace this with your actual MapBox API key)
 const String kMapBoxApiKey =

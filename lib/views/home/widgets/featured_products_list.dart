@@ -24,8 +24,8 @@ class FeaturedProductsList extends HookWidget {
     return isLoading
         ? const NearbyShimmer()
         : Container(
-            height: 190.h,
-            padding: EdgeInsets.only(left: 12.w, top: 10.h),
+            height: 220.h,
+            padding: EdgeInsets.only(left: 12.w, top: 10.h, bottom: 10.h),
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: List.generate(stores?.length ?? 0, (i) {

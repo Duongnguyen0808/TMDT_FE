@@ -7,6 +7,7 @@ import 'package:appliances_flutter/models/api_error.dart';
 import 'package:appliances_flutter/models/order_request.dart';
 import 'package:appliances_flutter/models/order_response.dart';
 import 'package:appliances_flutter/models/payment-request.dart';
+import 'package:appliances_flutter/controllers/cart_controller.dart';
 import 'package:appliances_flutter/views/entrypoint.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
@@ -99,6 +100,15 @@ class OrdersController extends GetxController {
 
         // Use returned orderId from backend
         setOrderId = orderResponse.orderId;
+
+        // Clear cart badge immediately so bottom nav reflects empty cart
+        try {
+          final cartController = Get.isRegistered<CartController>()
+              ? Get.find<CartController>()
+              : null;
+          cartController?.setCartCount(0);
+          await cartController?.fetchCartCount();
+        } catch (_) {}
 
         // Lưu order để dùng ở màn hình Successful
         order = item;

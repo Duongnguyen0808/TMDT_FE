@@ -50,6 +50,23 @@ class ClientOrders {
   final String? shipperPickupBy;
   final String? pickupNotes;
   final String? handoverPhoto;
+  final String? deliveryProofPhoto;
+  final String? deliveryProofNote;
+  final String? deliveryProofRecipient;
+  final DateTime? deliveryProofAt;
+  final DeliveryProofLocation? deliveryProofLocation;
+  final String? shopDeliveryConfirmStatus;
+  final String? shopDeliveryConfirmNote;
+  final DateTime? shopDeliveryConfirmedAt;
+  final String? shopDeliveryRejectReason;
+  final DateTime? shopDeliveryRejectedAt;
+  final String? deliveryIssueStatus;
+  final String? deliveryIssueNote;
+  final String? customerDisputeStatus;
+  final String? customerDisputeNote;
+  final DateTime? customerDisputeAt;
+  final DateTime? customerDisputeResolvedAt;
+  final String? customerDisputeResolution;
 
   ClientOrders({
     required this.id,
@@ -91,6 +108,23 @@ class ClientOrders {
     this.shipperPickupBy,
     this.pickupNotes,
     this.handoverPhoto,
+    this.deliveryProofPhoto,
+    this.deliveryProofNote,
+    this.deliveryProofRecipient,
+    this.deliveryProofAt,
+    this.deliveryProofLocation,
+    this.shopDeliveryConfirmStatus,
+    this.shopDeliveryConfirmNote,
+    this.shopDeliveryConfirmedAt,
+    this.shopDeliveryRejectReason,
+    this.shopDeliveryRejectedAt,
+    this.deliveryIssueStatus,
+    this.deliveryIssueNote,
+    this.customerDisputeStatus,
+    this.customerDisputeNote,
+    this.customerDisputeAt,
+    this.customerDisputeResolvedAt,
+    this.customerDisputeResolution,
   });
 
   factory ClientOrders.fromJson(Map<String, dynamic> json) => ClientOrders(
@@ -140,6 +174,26 @@ class ClientOrders {
         shipperPickupBy: json["shipperPickupBy"],
         pickupNotes: json["pickupNotes"],
         handoverPhoto: json["handoverPhoto"],
+        deliveryProofPhoto: json["deliveryProofPhoto"],
+        deliveryProofNote: json["deliveryProofNote"],
+        deliveryProofRecipient: json["deliveryProofRecipient"],
+        deliveryProofAt: _parseDate(json["deliveryProofAt"]),
+        deliveryProofLocation: json["deliveryProofLocation"] is Map
+            ? DeliveryProofLocation.fromJson(json["deliveryProofLocation"])
+            : null,
+        shopDeliveryConfirmStatus: json["shopDeliveryConfirmStatus"],
+        shopDeliveryConfirmNote: json["shopDeliveryConfirmNote"],
+        shopDeliveryConfirmedAt: _parseDate(json["shopDeliveryConfirmedAt"]),
+        shopDeliveryRejectReason: json["shopDeliveryRejectReason"],
+        shopDeliveryRejectedAt: _parseDate(json["shopDeliveryRejectedAt"]),
+        deliveryIssueStatus: json["deliveryIssueStatus"],
+        deliveryIssueNote: json["deliveryIssueNote"],
+        customerDisputeStatus: json["customerDisputeStatus"],
+        customerDisputeNote: json["customerDisputeNote"],
+        customerDisputeAt: _parseDate(json["customerDisputeAt"]),
+        customerDisputeResolvedAt:
+            _parseDate(json["customerDisputeResolvedAt"]),
+        customerDisputeResolution: json["customerDisputeResolution"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -182,6 +236,24 @@ class ClientOrders {
         "shipperPickupBy": shipperPickupBy,
         "pickupNotes": pickupNotes,
         "handoverPhoto": handoverPhoto,
+        "deliveryProofPhoto": deliveryProofPhoto,
+        "deliveryProofNote": deliveryProofNote,
+        "deliveryProofRecipient": deliveryProofRecipient,
+        "deliveryProofAt": deliveryProofAt?.toIso8601String(),
+        "deliveryProofLocation": deliveryProofLocation?.toJson(),
+        "shopDeliveryConfirmStatus": shopDeliveryConfirmStatus,
+        "shopDeliveryConfirmNote": shopDeliveryConfirmNote,
+        "shopDeliveryConfirmedAt": shopDeliveryConfirmedAt?.toIso8601String(),
+        "shopDeliveryRejectReason": shopDeliveryRejectReason,
+        "shopDeliveryRejectedAt": shopDeliveryRejectedAt?.toIso8601String(),
+        "deliveryIssueStatus": deliveryIssueStatus,
+        "deliveryIssueNote": deliveryIssueNote,
+        "customerDisputeStatus": customerDisputeStatus,
+        "customerDisputeNote": customerDisputeNote,
+        "customerDisputeAt": customerDisputeAt?.toIso8601String(),
+        "customerDisputeResolvedAt":
+            customerDisputeResolvedAt?.toIso8601String(),
+        "customerDisputeResolution": customerDisputeResolution,
       };
 }
 
@@ -193,6 +265,24 @@ class PickupCheckinLocation {
 
   factory PickupCheckinLocation.fromJson(Map<String, dynamic> json) =>
       PickupCheckinLocation(
+        latitude: (json["latitude"] as num?)?.toDouble() ?? 0,
+        longitude: (json["longitude"] as num?)?.toDouble() ?? 0,
+      );
+
+  Map<String, dynamic> toJson() => {
+        "latitude": latitude,
+        "longitude": longitude,
+      };
+}
+
+class DeliveryProofLocation {
+  final double latitude;
+  final double longitude;
+
+  DeliveryProofLocation({required this.latitude, required this.longitude});
+
+  factory DeliveryProofLocation.fromJson(Map<String, dynamic> json) =>
+      DeliveryProofLocation(
         latitude: (json["latitude"] as num?)?.toDouble() ?? 0,
         longitude: (json["longitude"] as num?)?.toDouble() ?? 0,
       );
