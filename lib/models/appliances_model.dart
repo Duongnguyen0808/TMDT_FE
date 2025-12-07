@@ -58,11 +58,11 @@ class AppliancesModel {
         title: json["title"],
         time: json["time"],
         appliancesTags: List<String>.from(json["appliancesTags"].map((x) => x)),
-        category: json["category"],
+        category: _stringFromMixed(json["category"]),
         appliancesType: List<String>.from(json["appliancesType"].map((x) => x)),
         code: json["code"],
         isAvailable: json["isAvailable"],
-        store: json["store"],
+        store: _stringFromMixed(json["store"]),
         rating: json["rating"]?.toDouble() ?? 3.0,
         ratingCount: json["ratingCount"] is int
             ? json["ratingCount"]
@@ -109,6 +109,22 @@ class AppliancesModel {
         if (stock != null) "stock": stock,
         if (soldCount != null) "soldCount": soldCount,
       };
+}
+
+String _stringFromMixed(dynamic value) {
+  if (value == null) return "";
+  if (value is String) return value;
+  if (value is Map<String, dynamic>) {
+    final id = value["_id"];
+    if (id is String && id.isNotEmpty) {
+      return id;
+    }
+    final title = value["title"];
+    if (title is String && title.isNotEmpty) {
+      return title;
+    }
+  }
+  return value.toString();
 }
 
 class Additive {

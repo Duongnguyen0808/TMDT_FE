@@ -55,7 +55,8 @@ FetchHook useFetchMyRatings() {
         isLoadingState.value = false;
         return;
       }
-      final url = Uri.parse('$appBaseUrl/api/ratings/mine');
+      // Backend mounts rating routes at /api/rating (singular)
+      final url = Uri.parse('$appBaseUrl/api/rating/mine');
       final res = await http.get(url, headers: {
         'Authorization': 'Bearer $token',
       });
@@ -68,7 +69,8 @@ FetchHook useFetchMyRatings() {
       }
       isLoadingState.value = false;
     } catch (e) {
-      errorState.value = e as Exception;
+      // Never let a type cast keep the spinner on forever
+      errorState.value = e is Exception ? e : Exception(e.toString());
       isLoadingState.value = false;
     }
   }

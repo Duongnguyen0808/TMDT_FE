@@ -1197,14 +1197,16 @@ class _UserOrderDetailPageState extends State<UserOrderDetailPage> {
     }
 
     final List<Widget> children = [
-      Row(
+      // Wrap chips to avoid horizontal overflow on narrow screens
+      Wrap(
+        spacing: 8.w,
+        runSpacing: 6.h,
         children: [
           _buildStatusChip(
             icon: Icons.verified_outlined,
             label: _mapShopConfirmStatus(shopStatus),
             color: _shopConfirmColor(shopStatus),
           ),
-          SizedBox(width: 8.w),
           _buildStatusChip(
             icon: Icons.report_problem_outlined,
             label: _mapDisputeStatus(disputeStatus),

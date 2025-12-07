@@ -40,20 +40,6 @@ class MyReviewsPage extends HookWidget {
         ),
         actions: [
           IconButton(
-            tooltip: 'Đổi ngôn ngữ',
-            onPressed: () async {
-              final next = languageService.isVietnamese()
-                  ? LanguageService.english
-                  : LanguageService.vietnamese;
-              await languageService.setLanguage(next);
-              Get.updateLocale(Locale(next));
-              Get.snackbar('Ngôn ngữ',
-                  'Đã chuyển sang ${languageService.getLanguageDisplayName()}',
-                  colorText: kLightWhite, backgroundColor: kPrimary);
-            },
-            icon: const Icon(Ionicons.language_outline, color: kLightWhite),
-          ),
-          IconButton(
             tooltip: 'Làm mới',
             onPressed: hook.refetch,
             icon: const Icon(Icons.refresh, color: kLightWhite),
@@ -197,15 +183,13 @@ class _RatingTile extends StatelessWidget {
   }
 
   Future<void> _openEntity(BuildContext context) async {
+    // Chỉ báo trạng thái ngắn gọn, không khóa màn hình để tránh kẹt spinner
     Get.snackbar('Đang mở', 'Đang tải chi tiết...',
         colorText: kLightWhite, backgroundColor: kPrimary.withOpacity(.9));
-    Get.dialog(const Center(child: CircularProgressIndicator()),
-        barrierDismissible: false);
     try {
       if (item.ratingType == 'Appliances') {
         final res = await ApiClient.instance
             .get('/api/appliances/${item.product}', useCache: false);
-        Get.back();
         if (res.ok && res.data is Map<String, dynamic>) {
           final appliances =
               AppliancesModel.fromJson(res.data as Map<String, dynamic>);
@@ -217,8 +201,7 @@ class _RatingTile extends StatelessWidget {
         }
       } else if (item.ratingType == 'Store') {
         final res = await ApiClient.instance
-            .get('/api/stores/${item.product}', useCache: false);
-        Get.back();
+            .get('/api/store/${item.product}', useCache: false);
         if (res.ok && res.data is Map<String, dynamic>) {
           final store = StoreModel.fromJson(res.data as Map<String, dynamic>);
           Get.to(() => StorePage(store: store),
@@ -228,15 +211,12 @@ class _RatingTile extends StatelessWidget {
           _err(extra: 'Mã lỗi: ${res.statusCode}');
         }
       } else if (item.ratingType == 'Driver') {
-        Get.back();
         Get.snackbar('Chưa hỗ trợ', 'Chưa có trang chi tiết tài xế',
             colorText: kLightWhite, backgroundColor: kPrimary);
       } else {
-        Get.back();
         _err(extra: 'Loại: ${item.ratingType}');
       }
     } catch (e) {
-      Get.back();
       _err(extra: e.toString());
     }
   }

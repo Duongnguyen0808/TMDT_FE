@@ -24,9 +24,25 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
+  late final SearchAppliancesController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(SearchAppliancesController());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.fetchAllProducts();
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(SearchAppliancesController());
     return Obx(() => Scaffold(
           backgroundColor: kLightWhite,
           appBar: AppBar(
@@ -65,9 +81,9 @@ class _SearchPageState extends State<SearchPage> {
                                 icon:
                                     Icon(Icons.close, color: kGray, size: 20.h),
                                 onPressed: () {
-                                  controller.searchResults = null;
                                   controller.setTrigger = false;
                                   _searchController.clear();
+                                  controller.fetchAllProducts();
                                 },
                               )
                             : null,
@@ -88,9 +104,9 @@ class _SearchPageState extends State<SearchPage> {
                               controller.setTrigger = true;
                             }
                             controller.searchFoods(key);
-                          } else {
-                            controller.searchResults = null;
+                          } else if (key.isEmpty) {
                             controller.setTrigger = false;
+                            controller.fetchAllProducts();
                           }
                         });
                       },
