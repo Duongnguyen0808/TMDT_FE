@@ -10,7 +10,6 @@ import 'package:appliances_flutter/common/back_ground_container.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/hooks/fetch_my_ratings.dart';
-import 'package:appliances_flutter/services/language_service.dart';
 import 'package:appliances_flutter/models/appliances_model.dart';
 import 'package:appliances_flutter/models/store_model.dart';
 import 'package:appliances_flutter/views/appliances/appliances_page.dart';
@@ -24,7 +23,6 @@ class MyReviewsPage extends HookWidget {
     final hook = useFetchMyRatings();
     final ratings = hook.data ?? [];
     final isLoading = hook.isLoading;
-    final languageService = LanguageService();
     return Scaffold(
       backgroundColor: kPrimary,
       appBar: AppBar(
@@ -35,12 +33,12 @@ class MyReviewsPage extends HookWidget {
           onPressed: () => Get.back(),
         ),
         title: ReusableText(
-          text: 'Đánh giá của tôi',
+          text: 'my_reviews'.tr,
           style: appStyle(18, kLightWhite, FontWeight.w600),
         ),
         actions: [
           IconButton(
-            tooltip: 'Làm mới',
+            tooltip: 'refresh'.tr,
             onPressed: hook.refetch,
             icon: const Icon(Icons.refresh, color: kLightWhite),
           ),
@@ -128,8 +126,10 @@ class _RatingTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_displayTitle(),
-                      style: appStyle(13, kDark, FontWeight.w600)),
+                  ReusableText(
+                      text: _displayTitle(),
+                      style: appStyle(13, kDark, FontWeight.w600),
+                      autoTranslate: true),
                   SizedBox(height: 4.h),
                   Row(
                     children: List.generate(5, (i) {
@@ -141,18 +141,24 @@ class _RatingTile extends StatelessWidget {
                   ),
                   if (item.comment.isNotEmpty) ...[
                     SizedBox(height: 4.h),
-                    Text(item.comment,
+                    ReusableText(
+                        text: item.comment,
                         style: appStyle(12, kGray, FontWeight.normal),
                         maxLines: 3,
-                        overflow: TextOverflow.ellipsis),
+                        overflow: TextOverflow.ellipsis,
+                        autoTranslate: true),
                   ],
                   SizedBox(height: 6.h),
-                  Text(_timeAgo(item.createdAt),
-                      style: appStyle(11, kGrayLight, FontWeight.w400)),
+                  ReusableText(
+                      text: _timeAgo(item.createdAt),
+                      style: appStyle(11, kGrayLight, FontWeight.w400),
+                      autoTranslate: true),
                   SizedBox(height: 4.h),
                   if (item.entity == null)
-                    Text('Mã: ${item.product}',
-                        style: appStyle(11, kGray, FontWeight.w400)),
+                    ReusableText(
+                        text: 'Mã: ${item.product}',
+                        style: appStyle(11, kGray, FontWeight.w400),
+                        autoTranslate: true),
                 ],
               ),
             ),
@@ -184,7 +190,7 @@ class _RatingTile extends StatelessWidget {
 
   Future<void> _openEntity(BuildContext context) async {
     // Chỉ báo trạng thái ngắn gọn, không khóa màn hình để tránh kẹt spinner
-    Get.snackbar('Đang mở', 'Đang tải chi tiết...',
+    Get.snackbar('reviews_opening'.tr, 'reviews_opening_message'.tr,
         colorText: kLightWhite, backgroundColor: kPrimary.withOpacity(.9));
     try {
       if (item.ratingType == 'Appliances') {
@@ -197,7 +203,9 @@ class _RatingTile extends StatelessWidget {
               transition: Transition.cupertino,
               duration: const Duration(milliseconds: 400));
         } else {
-          _err(extra: 'Mã lỗi: ${res.statusCode}');
+          _err(
+              extra:
+                  'reviews_error_code'.trParams({'code': '${res.statusCode}'}));
         }
       } else if (item.ratingType == 'Store') {
         final res = await ApiClient.instance
@@ -208,13 +216,16 @@ class _RatingTile extends StatelessWidget {
               transition: Transition.cupertino,
               duration: const Duration(milliseconds: 400));
         } else {
-          _err(extra: 'Mã lỗi: ${res.statusCode}');
+          _err(
+              extra:
+                  'reviews_error_code'.trParams({'code': '${res.statusCode}'}));
         }
       } else if (item.ratingType == 'Driver') {
-        Get.snackbar('Chưa hỗ trợ', 'Chưa có trang chi tiết tài xế',
+        Get.snackbar('reviews_driver_unavailable'.tr,
+            'reviews_driver_unavailable_message'.tr,
             colorText: kLightWhite, backgroundColor: kPrimary);
       } else {
-        _err(extra: 'Loại: ${item.ratingType}');
+        _err(extra: 'reviews_type_prefix'.trParams({'value': item.ratingType}));
       }
     } catch (e) {
       _err(extra: e.toString());
@@ -222,8 +233,8 @@ class _RatingTile extends StatelessWidget {
   }
 
   void _err({String? extra}) {
-    Get.snackbar(
-        'Lỗi', 'Không thể mở chi tiết${extra != null ? '\n$extra' : ''}',
+    Get.snackbar('voucher_error_title'.tr,
+        'reviews_error_detail'.trParams({'extra': extra ?? ''}),
         colorText: kLightWhite, backgroundColor: kRed);
   }
 }
@@ -242,17 +253,21 @@ class _EmptyState extends StatelessWidget {
               size: 90.sp, color: kGrayLight),
           SizedBox(height: 16.h),
           ReusableText(
-              text: 'Bạn chưa có đánh giá nào',
+              text: 'reviews_empty_title'.tr,
               style: appStyle(16, kGray, FontWeight.w500)),
           SizedBox(height: 8.h),
-          Text('Hãy mua hàng và đánh giá để xuất hiện tại đây',
+          ReusableText(
+              text: 'reviews_empty_message'.tr,
               style: appStyle(13, kGray, FontWeight.normal),
-              textAlign: TextAlign.center),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              softWrap: true,
+              overflow: TextOverflow.visible),
           SizedBox(height: 16.h),
           ElevatedButton.icon(
               onPressed: onRefresh,
               icon: const Icon(Icons.refresh),
-              label: const Text('Tải lại')),
+              label: Text('retry'.tr)),
         ],
       ),
     );

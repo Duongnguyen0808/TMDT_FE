@@ -55,15 +55,15 @@ class PromoStrip extends HookWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Săn voucher',
+                  Text('voucher_hunt_title'.tr,
                       style: appStyle(16, kLightWhite, FontWeight.w700)),
                   SizedBox(height: 2.h),
                   Text(
-                    count > 0
-                        ? 'Có $count voucher có thể nhận • chạm để xem'
-                        : (hook.isLoading
-                            ? 'Đang tải voucher...'
-                            : 'Nhận voucher để dùng khi thanh toán'),
+                    hook.isLoading
+                        ? 'voucher_hunt_loading'.tr
+                        : (count > 0
+                            ? 'voucher_hunt_count'.trParams({'count': '$count'})
+                            : 'voucher_hunt_hint'.tr),
                     style: appStyle(11, kLightWhite, FontWeight.w400),
                   ),
                 ],

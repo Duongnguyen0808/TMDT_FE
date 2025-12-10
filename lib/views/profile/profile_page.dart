@@ -92,7 +92,7 @@ class ProfilePage extends StatelessWidget {
                           transition: Transition.cupertino,
                           duration: const Duration(milliseconds: 600));
                     },
-                    title: 'Chỉnh sửa hồ sơ',
+                    title: 'edit_profile'.tr,
                     icon: Ionicons.create_outline,
                   ),
                   ProfileTileWidget(
@@ -141,7 +141,7 @@ class ProfilePage extends StatelessWidget {
                           transition: Transition.cupertino,
                           duration: const Duration(milliseconds: 600));
                     },
-                    title: 'Hộp chat',
+                    title: 'chat_inbox'.tr,
                     icon: Ionicons.chatbubble_ellipses_outline,
                   ),
                   ProfileTileWidget(

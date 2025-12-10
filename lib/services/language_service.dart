@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 class LanguageService {
@@ -14,12 +17,23 @@ class LanguageService {
 
   /// Get current language (default: Vietnamese)
   String getCurrentLanguage() {
-    return box.read(_languageKey) ?? vietnamese;
+    final stored = box.read(_languageKey);
+    if (stored is String && stored.isNotEmpty) {
+      return stored;
+    }
+    final localeCode = Get.locale?.languageCode;
+    if (localeCode != null && localeCode.isNotEmpty) {
+      return localeCode;
+    }
+    return vietnamese;
   }
 
   /// Set language
   Future<void> setLanguage(String languageCode) async {
     await box.write(_languageKey, languageCode);
+    if (Get.locale?.languageCode != languageCode) {
+      Get.updateLocale(Locale(languageCode));
+    }
   }
 
   /// Check if current language is Vietnamese

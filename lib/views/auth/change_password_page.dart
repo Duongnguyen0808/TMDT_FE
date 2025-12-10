@@ -33,8 +33,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     final controller = Get.put(ChangePasswordController());
     return Scaffold(
       appBar: AppBar(
-        title:
-            Text('Đổi mật khẩu', style: appStyle(16, kDark, FontWeight.w600)),
+        title: Text('change_password'.tr,
+            style: appStyle(16, kDark, FontWeight.w600)),
         backgroundColor: kOffWhite,
         elevation: 0,
         leading: IconButton(
@@ -48,7 +48,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         child: ListView(
           children: [
             ReusableText(
-              text: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới',
+              text: 'change_password_instruction'.tr,
               style: appStyle(14, kGray, FontWeight.w400),
             ),
             SizedBox(height: 12.h),
@@ -60,8 +60,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             SizedBox(height: 16.h),
             Obx(() => CustomButton(
                   text: controller.isLoading.value
-                      ? 'Đang lưu...'
-                      : 'Lưu thay đổi',
+                      ? 'change_password_saving'.tr
+                      : 'change_password_submit'.tr,
                   btnHeight: 40.h,
                   btnWidth: width,
                   onTap: controller.isLoading.value
@@ -69,8 +69,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                       : () async {
                           if (_newCtrl.text.length < 8 ||
                               _newCtrl.text != _confirmCtrl.text) {
-                            Get.snackbar('Cảnh báo',
-                                'Mật khẩu mới không hợp lệ hoặc không khớp',
+                            Get.snackbar(
+                                'warning'.tr, 'change_password_invalid'.tr,
                                 colorText: Colors.white, backgroundColor: kRed);
                             return;
                           }

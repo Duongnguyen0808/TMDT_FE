@@ -28,6 +28,7 @@ import 'package:appliances_flutter/views/store/reviews_page.dart';
 import 'package:appliances_flutter/views/store/store_page.dart';
 import 'package:appliances_flutter/controllers/chat_controller.dart';
 import 'package:appliances_flutter/views/chat/chat_detail_page.dart';
+import 'package:appliances_flutter/services/language_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -58,11 +59,13 @@ class _AppliancesPageState extends State<AppliancesPage>
   String? _reviewsError;
   List<dynamic> _recentReviews = [];
   Map<String, dynamic>? _reviewSummary;
+  final LanguageService _languageService = LanguageService();
 
   @override
   void initState() {
     super.initState();
     timeago.setLocaleMessages('vi', timeago.ViMessages());
+    timeago.setLocaleMessages('en', timeago.EnMessages());
     WidgetsBinding.instance.addObserver(this);
     // Khởi tạo controller và nạp additives một lần ở initState để tránh cập nhật reactive trong build
     _appliancesController = Get.put(AppliancesController());
@@ -115,20 +118,21 @@ class _AppliancesPageState extends State<AppliancesPage>
             _reviewsLoading = false;
             _reviewsError = decoded is Map && decoded['message'] != null
                 ? decoded['message'].toString()
-                : 'Không thể tải đánh giá';
+                : 'product_reviews_error'.tr;
           });
         }
       } else {
         setState(() {
           _reviewsLoading = false;
-          _reviewsError = 'Không thể tải đánh giá (mã ${response.statusCode})';
+          _reviewsError = 'product_reviews_error_with_code'
+              .trParams({'code': '${response.statusCode}'});
         });
       }
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _reviewsLoading = false;
-        _reviewsError = 'Không thể tải đánh giá';
+        _reviewsError = 'product_reviews_error'.tr;
       });
     }
   }
@@ -177,7 +181,8 @@ class _AppliancesPageState extends State<AppliancesPage>
     if (isoString == null || isoString.isEmpty) return '';
     try {
       final date = DateTime.parse(isoString).toLocal();
-      return timeago.format(date, locale: 'vi');
+      final locale = _languageService.isEnglish() ? 'en' : 'vi';
+      return timeago.format(date, locale: locale);
     } catch (_) {
       return '';
     }
@@ -201,7 +206,7 @@ class _AppliancesPageState extends State<AppliancesPage>
           children: [
             Expanded(
               child: ReusableText(
-                text: 'Đánh giá từ khách hàng',
+                text: 'product_reviews_title'.tr,
                 style: appStyle(18, kDark, FontWeight.w600),
               ),
             ),
@@ -215,7 +220,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                 if (mounted) _loadReviewPreview();
               },
               icon: const Icon(Icons.rate_review_outlined, size: 16),
-              label: const Text('Xem tất cả'),
+              label: Text('product_reviews_view_all'.tr),
             ),
           ],
         ),
@@ -237,7 +242,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                 ),
                 SizedBox(width: 12.w),
                 ReusableText(
-                  text: 'Đang tải đánh giá...',
+                  text: 'product_reviews_loading'.tr,
                   style: appStyle(13, kGray, FontWeight.w500),
                 ),
               ],
@@ -254,13 +259,16 @@ class _AppliancesPageState extends State<AppliancesPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _reviewsError!,
+                ReusableText(
+                  text: _reviewsError!,
                   style: appStyle(13, kRed, FontWeight.w500),
+                  autoTranslate: true,
+                  maxLines: 3,
+                  overflow: TextOverflow.visible,
                 ),
                 TextButton(
                   onPressed: _loadReviewPreview,
-                  child: const Text('Thử lại'),
+                  child: Text('retry'.tr),
                 ),
               ],
             ),
@@ -276,8 +284,8 @@ class _AppliancesPageState extends State<AppliancesPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Chưa có đánh giá nào cho món này',
+                ReusableText(
+                  text: 'product_reviews_empty'.tr,
                   style: appStyle(13, kGray, FontWeight.w500),
                 ),
                 SizedBox(height: 8.h),
@@ -291,7 +299,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                       _loadReviewPreview();
                     }
                   },
-                  child: const Text('Viết đánh giá đầu tiên'),
+                  child: Text('product_reviews_write_first'.tr),
                 ),
               ],
             ),
@@ -325,8 +333,9 @@ class _AppliancesPageState extends State<AppliancesPage>
                       unratedColor: kGrayLight.withOpacity(.3),
                     ),
                     SizedBox(height: 4.h),
-                    Text(
-                      '$total đánh giá',
+                    ReusableText(
+                      text:
+                          'product_reviews_total'.trParams({'count': '$total'}),
                       style: appStyle(12, kGray, FontWeight.w400),
                     ),
                   ],
@@ -381,9 +390,10 @@ class _AppliancesPageState extends State<AppliancesPage>
 
   Widget _buildReviewCard(Map<String, dynamic> review) {
     final user = review['userId'];
+    final fallbackName = 'reviews_anonymous'.tr;
     final username = user is Map && user['username'] is String
         ? (user['username'] as String)
-        : 'Ẩn danh';
+        : fallbackName;
     final ratingValue = review['rating'] is num
         ? (review['rating'] as num).toDouble()
         : double.tryParse(review['rating']?.toString() ?? '') ?? 0;
@@ -391,7 +401,9 @@ class _AppliancesPageState extends State<AppliancesPage>
     final comment = (review['comment'] ?? '').toString();
     final createdAt = review['createdAt']?.toString();
     final timeLabel = _formatReviewTime(createdAt);
-    final avatarLabel = username.isNotEmpty ? username[0].toUpperCase() : 'Ẩ';
+    final avatarLabel = username.isNotEmpty
+        ? username[0].toUpperCase()
+        : fallbackName[0].toUpperCase();
 
     return Card(
       margin: EdgeInsets.only(bottom: 10.h),
@@ -422,8 +434,8 @@ class _AppliancesPageState extends State<AppliancesPage>
                         style: appStyle(13, kDark, FontWeight.w600),
                       ),
                       if (timeLabel.isNotEmpty)
-                        Text(
-                          timeLabel,
+                        ReusableText(
+                          text: timeLabel,
                           style: appStyle(11, kGray, FontWeight.w400),
                         ),
                     ],
@@ -443,9 +455,13 @@ class _AppliancesPageState extends State<AppliancesPage>
             ),
             if (comment.isNotEmpty) ...[
               SizedBox(height: 8.h),
-              Text(
-                comment,
+              ReusableText(
+                text: comment,
                 style: appStyle(12, kDark, FontWeight.w400),
+                autoTranslate: true,
+                maxLines: 6,
+                overflow: TextOverflow.visible,
+                softWrap: true,
               ),
             ],
           ],
@@ -689,7 +705,7 @@ class _AppliancesPageState extends State<AppliancesPage>
                                     borderRadius: BorderRadius.circular(12.r),
                                   ),
                                   child: ReusableText(
-                                    text: "Đánh giá",
+                                    text: 'product_reviews_button'.tr,
                                     style: appStyle(
                                         11, kLightWhite, FontWeight.w500),
                                   ),

@@ -3,6 +3,8 @@ import 'package:appliances_flutter/common/back_ground_container.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/models/banner_model.dart';
+import 'package:appliances_flutter/services/language_service.dart';
+import 'package:appliances_flutter/widgets/dynamic_translated_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -31,6 +33,9 @@ class BannerProductsPage extends StatelessWidget {
         title: ReusableText(
           text: banner.title,
           style: appStyle(18, kLightWhite, FontWeight.w600),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          autoTranslate: true,
         ),
       ),
       body: BackGroundContainer(
@@ -45,7 +50,7 @@ class BannerProductsPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ReusableText(
-                    text: 'Sản phẩm nổi bật',
+                    text: 'banner_featured_products'.tr,
                     style: appStyle(16, kDark, FontWeight.w700),
                   ),
                   SizedBox(height: 10.h),
@@ -121,35 +126,41 @@ class _BannerHero extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  DynamicTranslatedText(
                     banner.title,
                     style: TextStyle(
                       color: kLightWhite,
                       fontSize: 22.sp,
                       fontWeight: FontWeight.w700,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   if ((banner.subtitle ?? '').isNotEmpty)
                     Padding(
                       padding: EdgeInsets.only(top: 4.h),
-                      child: Text(
+                      child: DynamicTranslatedText(
                         banner.subtitle!,
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 14.sp,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   if ((banner.description ?? '').isNotEmpty)
                     Padding(
                       padding: EdgeInsets.only(top: 8.h),
-                      child: Text(
+                      child: DynamicTranslatedText(
                         banner.description!,
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 13.sp,
                           height: 1.3,
                         ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   SizedBox(height: 10.h),
@@ -165,9 +176,11 @@ class _BannerHero extends StatelessWidget {
                             color: kSecondary,
                             borderRadius: BorderRadius.circular(20.r),
                           ),
-                          child: Text(
+                          child: DynamicTranslatedText(
                             banner.ctaText!,
                             style: appStyle(12, kDark, FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       if (scheduleText != null) ...[
@@ -214,15 +227,18 @@ class _BannerHero extends StatelessWidget {
     if (banner.startAt == null && banner.endAt == null) return null;
     final start = banner.startAt;
     final end = banner.endAt;
-    final dateFormatter = DateFormat('dd/MM');
+    final isEnglish = LanguageService().isEnglish();
+    final dateFormatter = DateFormat(isEnglish ? 'MM/dd' : 'dd/MM');
     if (start != null && end != null) {
       return '${dateFormatter.format(start)} → ${dateFormatter.format(end)}';
     }
     if (start != null) {
-      return 'Từ ${dateFormatter.format(start)}';
+      return 'banner_schedule_from'
+          .trParams({'date': dateFormatter.format(start)});
     }
     if (end != null) {
-      return 'Đến ${dateFormatter.format(end)}';
+      return 'banner_schedule_until'
+          .trParams({'date': dateFormatter.format(end)});
     }
     return null;
   }
@@ -236,6 +252,16 @@ class _BannerProductTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final languageService = LanguageService();
+    final isEnglish = languageService.isEnglish();
+    final title =
+        product.title.isEmpty ? 'banner_product_generic'.tr : product.title;
+    final shouldTranslate = product.title.isNotEmpty;
+    final stockText = product.stock != null
+        ? (isEnglish
+            ? 'In stock: ${product.stock}'
+            : 'Kho còn: ${product.stock}')
+        : (isEnglish ? 'Inventory is being updated' : 'Đang cập nhật tồn kho');
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(12.w),
@@ -279,18 +305,20 @@ class _BannerProductTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  product.title.isEmpty ? 'Sản phẩm' : product.title,
+                ReusableText(
+                  text: title,
+                  style: appStyle(15, kDark, FontWeight.w600),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: appStyle(15, kDark, FontWeight.w600),
+                  autoTranslate: shouldTranslate,
                 ),
                 SizedBox(height: 6.h),
-                Text(
-                  product.stock != null
-                      ? 'Kho còn: ${product.stock}'
-                      : 'Đang cập nhật tồn kho',
+                ReusableText(
+                  text: stockText,
                   style: appStyle(12, kGray, FontWeight.w400),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  autoTranslate: true,
                 ),
               ],
             ),
@@ -331,7 +359,7 @@ class _EmptyBannerProducts extends StatelessWidget {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Text(
-              'Banner "$bannerTitle" chưa có sản phẩm đính kèm',
+              'banner_empty_products'.trParams({'title': bannerTitle}),
               style: appStyle(13, kGray, FontWeight.w500),
               textAlign: TextAlign.center,
             ),

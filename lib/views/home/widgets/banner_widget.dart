@@ -3,6 +3,7 @@ import 'package:appliances_flutter/hooks/fetchBanners.dart';
 import 'package:appliances_flutter/models/banner_model.dart';
 import 'package:appliances_flutter/views/products/all_products_page.dart';
 import 'package:appliances_flutter/views/products/banner_products_page.dart';
+import 'package:appliances_flutter/widgets/dynamic_translated_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ class BannerWidget extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Hook keeps banners, loading, and refetch logic synchronized with backend API.
     final hook = useFetchBanners();
     final List<BannerModel>? banners = hook.data;
 
@@ -25,14 +27,15 @@ class BannerWidget extends HookWidget {
 
     if (hook.error != null) {
       return _BannerPlaceholder(
-        message: hook.error!.toString(),
+        message: 'banner_placeholder_error'
+            .trParams({'error': hook.error!.toString()}),
         onRetry: hook.refetch,
       );
     }
 
     if (banners == null || banners.isEmpty) {
       return _BannerPlaceholder(
-        message: 'Banner đang được cập nhật, bạn quay lại sau nhé!',
+        message: 'banner_placeholder_empty'.tr,
         onRetry: hook.refetch,
       );
     }
@@ -59,6 +62,7 @@ class BannerWidget extends HookWidget {
   }
 
   void _handleBannerTap(BannerModel banner) {
+    // Prefer showing the curated product list if the banner was linked to SKUs in CMS.
     if (banner.hasLinkedProducts) {
       Get.to(
         () => BannerProductsPage(banner: banner),
@@ -72,6 +76,7 @@ class BannerWidget extends HookWidget {
     String? resolvedCategory =
         (category != null && category.isNotEmpty) ? category : null;
 
+    // Fallback: open global catalog filtered by the tagged category/title.
     Get.to(
       () => AllProductsPage(
         category: resolvedCategory,
@@ -132,6 +137,7 @@ class _BannerCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                // Overlay typography stays readable regardless of banner artwork colors.
                 Positioned(
                   left: 20.w,
                   right: 20.w,
@@ -139,7 +145,7 @@ class _BannerCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      DynamicTranslatedText(
                         banner.title,
                         style: TextStyle(
                           fontSize: 22.sp,
@@ -154,16 +160,20 @@ class _BannerCard extends StatelessWidget {
                             ),
                           ],
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       if ((banner.subtitle ?? '').isNotEmpty) ...[
                         SizedBox(height: 6.h),
-                        Text(
+                        DynamicTranslatedText(
                           banner.subtitle!,
                           style: TextStyle(
                             fontSize: 14.sp,
                             color: kLightWhite,
                             fontWeight: FontWeight.w400,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                       if ((banner.ctaText ?? '').isNotEmpty) ...[
@@ -177,13 +187,15 @@ class _BannerCard extends StatelessWidget {
                             color: kSecondary.withOpacity(0.85),
                             borderRadius: BorderRadius.circular(30.r),
                           ),
-                          child: Text(
+                          child: DynamicTranslatedText(
                             banner.ctaText!,
                             style: TextStyle(
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w600,
                               color: kDark,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         )
                       ],
@@ -237,11 +249,12 @@ class _BannerPlaceholder extends StatelessWidget {
                 ),
               ),
             ),
+            // Allow the user to retry the HTTP call when transient errors occur.
             if (onRetry != null) ...[
               SizedBox(height: 10.h),
               TextButton(
                 onPressed: onRetry,
-                child: const Text('Thử lại'),
+                child: Text('retry'.tr),
               ),
             ],
           ],

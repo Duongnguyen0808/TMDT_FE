@@ -5,11 +5,14 @@ import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/hooks/fetch_vouchers.dart';
 import 'package:appliances_flutter/models/voucher.dart';
 import 'package:appliances_flutter/services/api_client.dart';
+import 'package:appliances_flutter/services/language_service.dart';
+import 'package:appliances_flutter/widgets/dynamic_translated_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class VouchersPage extends HookWidget {
   const VouchersPage({super.key});
@@ -28,12 +31,12 @@ class VouchersPage extends HookWidget {
           onPressed: () => Get.back(),
         ),
         title: ReusableText(
-          text: 'Voucher',
+          text: 'vouchers'.tr,
           style: appStyle(18, kLightWhite, FontWeight.w600),
         ),
         actions: [
           IconButton(
-            tooltip: 'Làm mới',
+            tooltip: 'refresh'.tr,
             onPressed: hook.refetch,
             icon: const Icon(Icons.refresh, color: kLightWhite),
           ),
@@ -67,17 +70,40 @@ class _VoucherCard extends StatelessWidget {
     final res = await ApiClient.instance
         .post('/api/voucher/claim', data: {'code': voucher.code});
     if (res.ok == true && res.data is Map<String, dynamic>) {
-      Get.snackbar('Thành công', 'Đã nhận voucher ${voucher.code}',
-          backgroundColor: kPrimary, colorText: kLightWhite);
+      Get.snackbar(
+        'voucher_claim_success_title'.tr,
+        'voucher_claim_success_message'.trParams({'code': voucher.code}),
+        backgroundColor: kPrimary,
+        colorText: kLightWhite,
+      );
       onClaimed?.call();
     } else {
-      Get.snackbar('Thất bại', 'Không thể nhận voucher',
-          backgroundColor: kRed, colorText: kLightWhite);
+      Get.snackbar(
+        'voucher_claim_fail_title'.tr,
+        'voucher_claim_retry'.tr,
+        backgroundColor: kRed,
+        colorText: kLightWhite,
+      );
     }
+  }
+
+  String _formatAmount(double value) {
+    final formatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: '₫',
+      decimalDigits: 0,
+    );
+    return formatter.format(value);
   }
 
   @override
   Widget build(BuildContext context) {
+    final languageCode = LanguageService().getCurrentLanguage();
+    final discountText = voucher.getDiscountText(locale: languageCode);
+    final minOrderText = voucher.minOrderTotal > 0
+        ? 'voucher_min_order'
+            .trParams({'amount': _formatAmount(voucher.minOrderTotal)})
+        : null;
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(12.w),
@@ -108,14 +134,17 @@ class _VoucherCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(voucher.title,
-                    style: appStyle(15, kDark, FontWeight.w600)),
+                DynamicTranslatedText(
+                  voucher.title,
+                  style: appStyle(15, kDark, FontWeight.w600),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 SizedBox(height: 4.h),
-                Text(voucher.getDiscountText(),
-                    style: appStyle(12, kGray, FontWeight.w400)),
-                if (voucher.minOrderTotal > 0) ...[
+                Text(discountText, style: appStyle(12, kGray, FontWeight.w400)),
+                if (minOrderText != null) ...[
                   SizedBox(height: 2.h),
-                  Text('Đơn tối thiểu ${voucher.minOrderTotal.toInt()}đ',
+                  Text(minOrderText,
                       style: appStyle(11, kGrayLight, FontWeight.w500)),
                 ]
               ],
@@ -131,8 +160,8 @@ class _VoucherCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10.r),
               ),
             ),
-            child:
-                Text('Nhận', style: appStyle(12, kLightWhite, FontWeight.w700)),
+            child: Text('voucher_button_claim'.tr,
+                style: appStyle(12, kLightWhite, FontWeight.w700)),
           ),
         ],
       ),
@@ -151,10 +180,10 @@ class _Empty extends StatelessWidget {
           Icon(Ionicons.pricetag_outline, size: 80.sp, color: kGrayLight),
           SizedBox(height: 12.h),
           ReusableText(
-              text: 'Chưa có voucher để nhận',
+              text: 'voucher_empty_available'.tr,
               style: appStyle(16, kGray, FontWeight.w600)),
           SizedBox(height: 6.h),
-          Text('Hãy quay lại sau hoặc kéo để làm mới',
+          Text('voucher_empty_hint'.tr,
               style: appStyle(12, kGray, FontWeight.w400)),
         ],
       ),

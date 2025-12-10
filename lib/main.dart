@@ -7,6 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/views/entrypoint.dart';
 import 'package:appliances_flutter/config/translations.dart';
+import 'package:appliances_flutter/services/auto_translation_service.dart';
 import 'package:appliances_flutter/services/language_service.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:get_storage/get_storage.dart';
@@ -37,6 +38,7 @@ Future<void> main() async {
   }
 
   await GetStorage.init();
+  await AutoTranslationService().ensureEnglishTranslations();
   await _initMessaging();
   _watchAuthAndSyncFcm();
   runApp(const MyApp());

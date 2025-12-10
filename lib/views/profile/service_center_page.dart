@@ -32,9 +32,9 @@ class _ServiceCenterPageState extends State<ServiceCenterPage> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
         ),
-        title: const Text(
-          'Trung tâm dịch vụ',
-          style: TextStyle(
+        title: Text(
+          'service_center'.tr,
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -42,7 +42,7 @@ class _ServiceCenterPageState extends State<ServiceCenterPage> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Làm mới',
+            tooltip: 'refresh'.tr,
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () => controller.fetchTickets(
               status: controller.selectedStatusFilter.value.isEmpty
@@ -59,7 +59,8 @@ class _ServiceCenterPageState extends State<ServiceCenterPage> {
         },
         backgroundColor: kPrimary,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Tạo yêu cầu', style: TextStyle(color: Colors.white)),
+        label: Text('service_create_request'.tr,
+            style: const TextStyle(color: Colors.white)),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,11 +81,13 @@ class _ServiceCenterPageState extends State<ServiceCenterPage> {
                   ),
                   child: ListView(
                     padding: const EdgeInsets.all(32),
-                    children: const [
-                      Icon(Icons.support_agent, size: 64, color: kGray),
-                      SizedBox(height: 12),
+                    children: [
+                      const Icon(Icons.support_agent, size: 64, color: kGray),
+                      const SizedBox(height: 12),
                       Text(
-                        'Bạn chưa có yêu cầu nào. Nhấn "Tạo yêu cầu" để bắt đầu. ',
+                        'service_no_ticket_message'.trParams(
+                          {'action': 'service_create_request'.tr},
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -127,7 +130,7 @@ class _StatusChips extends StatelessWidget {
           (metaStatuses != null && metaStatuses.isNotEmpty)
               ? metaStatuses
               : ServiceTicket.defaultStatuses;
-      final filters = ['Tất cả', ...statuses];
+      final itemCount = statuses.length + 1;
       final selected = controller.selectedStatusFilter.value;
       return SizedBox(
         height: 56,
@@ -139,7 +142,7 @@ class _StatusChips extends StatelessWidget {
             final isSelected = selected == normalized;
             return ChoiceChip(
               label: Text(idx == 0
-                  ? 'Tất cả'
+                  ? 'all'.tr
                   : ServiceTicket.labelForStatus(normalized)),
               selected: isSelected,
               onSelected: (_) {
@@ -150,7 +153,7 @@ class _StatusChips extends StatelessWidget {
             );
           },
           separatorBuilder: (_, __) => const SizedBox(width: 8),
-          itemCount: filters.length,
+          itemCount: itemCount,
         ),
       );
     });
@@ -235,7 +238,9 @@ class _TicketCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              '#${ticket.code} • Ưu tiên ${ticket.readablePriority}',
+              '#${ticket.code} • ${'service_ticket_priority'.trParams({
+                    'priority': ticket.readablePriority
+                  })}',
               style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
             ),
             const SizedBox(height: 8),

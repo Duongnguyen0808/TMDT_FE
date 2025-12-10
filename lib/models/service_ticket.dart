@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 const List<String> _defaultStatuses = [
@@ -26,31 +27,31 @@ const List<String> _defaultCategories = [
   'Other',
 ];
 
-const Map<String, String> _statusLabels = {
-  'Pending': 'Đang chờ',
-  'In Progress': 'Đang xử lý',
-  'WaitingRequester': 'Cần phản hồi',
-  'Resolved': 'Đã xử lý',
-  'Closed': 'Đã đóng',
+const Map<String, String> _statusTranslationKeys = {
+  'Pending': 'service_status_pending',
+  'In Progress': 'service_status_in_progress',
+  'WaitingRequester': 'service_status_waiting_requester',
+  'Resolved': 'service_status_resolved',
+  'Closed': 'service_status_closed',
 };
 
-const Map<String, String> _priorityLabels = {
-  'Low': 'Thấp',
-  'Normal': 'Bình thường',
-  'High': 'Cao',
-  'Urgent': 'Khẩn',
+const Map<String, String> _priorityTranslationKeys = {
+  'Low': 'service_priority_low',
+  'Normal': 'service_priority_normal',
+  'High': 'service_priority_high',
+  'Urgent': 'service_priority_urgent',
 };
 
-const Map<String, String> _categoryLabels = {
-  'Order': 'Đơn hàng',
-  'Payment': 'Thanh toán',
-  'Account': 'Tài khoản',
-  'Delivery': 'Giao hàng',
-  'Store': 'Cửa hàng',
-  'Driver': 'Tài xế',
-  'Technical': 'Kỹ thuật',
-  'Settlement': 'Đối soát',
-  'Other': 'Khác',
+const Map<String, String> _categoryTranslationKeys = {
+  'Order': 'service_category_order',
+  'Payment': 'service_category_payment',
+  'Account': 'service_category_account',
+  'Delivery': 'service_category_delivery',
+  'Store': 'service_category_store',
+  'Driver': 'service_category_driver',
+  'Technical': 'service_category_technical',
+  'Settlement': 'service_category_settlement',
+  'Other': 'service_category_other',
 };
 
 class ServiceTicketAttachment {
@@ -127,11 +128,20 @@ class ServiceTicket {
   static List<String> get defaultPriorities => _defaultPriorities;
   static List<String> get defaultCategories => _defaultCategories;
 
-  static String labelForStatus(String value) => _statusLabels[value] ?? value;
-  static String labelForPriority(String value) =>
-      _priorityLabels[value] ?? value;
-  static String labelForCategory(String value) =>
-      _categoryLabels[value] ?? value;
+  static String labelForStatus(String value) {
+    final key = _statusTranslationKeys[value];
+    return key != null ? key.tr : value;
+  }
+
+  static String labelForPriority(String value) {
+    final key = _priorityTranslationKeys[value];
+    return key != null ? key.tr : value;
+  }
+
+  static String labelForCategory(String value) {
+    final key = _categoryTranslationKeys[value];
+    return key != null ? key.tr : value;
+  }
 
   final String id;
   final String code;
@@ -206,10 +216,17 @@ class ServiceTicket {
   String timeAgo([DateTime? reference]) {
     final now = reference ?? DateTime.now();
     final diff = now.difference(lastMessageAt ?? updatedAt);
-    if (diff.inMinutes < 1) return 'Vừa xong';
-    if (diff.inHours < 1) return '${diff.inMinutes} phút trước';
-    if (diff.inDays < 1) return '${diff.inHours} giờ trước';
-    if (diff.inDays < 7) return '${diff.inDays} ngày trước';
+    if (diff.inMinutes < 1) return 'time_just_now'.tr;
+    if (diff.inHours < 1) {
+      return 'time_minutes_ago'
+          .trParams({'minutes': diff.inMinutes.toString()});
+    }
+    if (diff.inDays < 1) {
+      return 'time_hours_ago'.trParams({'hours': diff.inHours.toString()});
+    }
+    if (diff.inDays < 7) {
+      return 'time_days_ago'.trParams({'days': diff.inDays.toString()});
+    }
     return DateFormat('dd/MM/yyyy').format(lastMessageAt ?? updatedAt);
   }
 }

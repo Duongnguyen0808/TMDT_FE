@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class SupportPage extends StatelessWidget {
   const SupportPage({super.key});
@@ -16,18 +17,18 @@ class SupportPage extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-        title: const Text(
-          'Hỗ trợ khách hàng',
-          style: TextStyle(
+        title: Text(
+          'customer_support'.tr,
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
-      body: const Center(
+      body: Center(
         child: Text(
-          'Liên hệ hỗ trợ: support@tmdt.local\nHotline: 1900-0000',
+          'support_contact_info'.tr,
           textAlign: TextAlign.center,
         ),
       ),

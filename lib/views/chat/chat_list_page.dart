@@ -29,7 +29,8 @@ class _ChatListPageState extends State<ChatListPage> {
       appBar: AppBar(
         backgroundColor: kOffWhite,
         elevation: 0,
-        title: Text('Hộp chat', style: appStyle(16, kDark, FontWeight.w600)),
+        title:
+            Text('chat_inbox'.tr, style: appStyle(16, kDark, FontWeight.w600)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: kDark),
           onPressed: () => Get.back(),
@@ -42,7 +43,7 @@ class _ChatListPageState extends State<ChatListPage> {
         if (ctrl.conversations.isEmpty) {
           return Center(
             child: ReusableText(
-              text: 'Chưa có hội thoại',
+              text: 'chat_empty'.tr,
               style: appStyle(14, kGray, FontWeight.w400),
             ),
           );
@@ -52,8 +53,9 @@ class _ChatListPageState extends State<ChatListPage> {
           itemBuilder: (_, i) {
             final c = ctrl.conversations[i];
             final peer = c['peer'];
-            final name =
-                (peer != null ? (peer['username'] ?? peer['name']) : 'Đối tác');
+            final name = (peer != null
+                ? (peer['username'] ?? peer['name'])
+                : 'chat_partner_fallback'.tr);
             final last = c['lastMessage'] ?? '';
             return ListTile(
               title: Text(name.toString(),

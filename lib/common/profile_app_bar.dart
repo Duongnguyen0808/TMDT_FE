@@ -9,13 +9,45 @@ import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
 import 'package:appliances_flutter/views/profile/settings_page.dart';
 
-class ProfileAppBar extends StatelessWidget {
+class ProfileAppBar extends StatefulWidget {
   const ProfileAppBar({super.key});
 
   @override
+  State<ProfileAppBar> createState() => _ProfileAppBarState();
+}
+
+class _ProfileAppBarState extends State<ProfileAppBar> {
+  final LanguageService _languageService = LanguageService();
+  late String _currentLanguage;
+
+  bool get _isVietnamese => _currentLanguage == LanguageService.vietnamese;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentLanguage = _languageService.getCurrentLanguage();
+  }
+
+  Future<void> _toggleLanguage() async {
+    final next =
+        _isVietnamese ? LanguageService.english : LanguageService.vietnamese;
+    await _languageService.setLanguage(next);
+    if (mounted) {
+      setState(() {
+        _currentLanguage = next;
+      });
+    }
+    Get.snackbar(
+      'language'.tr,
+      '${'language_changed'.tr} ${_languageService.getLanguageDisplayName()}',
+      backgroundColor: kPrimary,
+      colorText: kLightWhite,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final languageService = LanguageService();
-    final isVi = languageService.isVietnamese();
     return AppBar(
       backgroundColor: kOffWhite,
       elevation: 0,
@@ -27,27 +59,19 @@ class ProfileAppBar extends StatelessWidget {
         Row(
           children: [
             GestureDetector(
-              onTap: () async {
-                final next =
-                    isVi ? LanguageService.english : LanguageService.vietnamese;
-                await languageService.setLanguage(next);
-                Get.updateLocale(Locale(next));
-                Get.snackbar('Ngôn ngữ',
-                    'Đã chuyển sang ${languageService.getLanguageDisplayName()}',
-                    backgroundColor: kPrimary,
-                    colorText: kLightWhite,
-                    duration: const Duration(seconds: 2));
-              },
+              onTap: _toggleLanguage,
               child: Row(
                 children: [
                   SvgPicture.asset(
-                    isVi ? 'assets/icons/vn.svg' : 'assets/icons/en.svg',
+                    _isVietnamese
+                        ? 'assets/icons/vn.svg'
+                        : 'assets/icons/usa.svg',
                     width: 22.h,
                     height: 22.h,
                   ),
                   SizedBox(width: 6.w),
                   ReusableText(
-                    text: isVi ? 'Tiếng Việt' : 'English',
+                    text: _isVietnamese ? 'vietnamese'.tr : 'english'.tr,
                     style: appStyle(12, kDark, FontWeight.w500),
                   ),
                 ],

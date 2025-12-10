@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_collection_literals
 
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/back_ground_container.dart';
@@ -298,6 +299,10 @@ class _ShippingAddressState extends State<ShippingAddress> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final double bottomSafeInset = mediaQuery.padding.bottom;
+    final double bottomViewInset = mediaQuery.viewPadding.bottom;
+    final double navigationCompensation = math.max(bottomViewInset, 32.h);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kOffWhite,
@@ -457,11 +462,13 @@ class _ShippingAddressState extends State<ShippingAddress> {
             BackGroundContainer(
               color: kOffWhite,
               child: ListView(
-                padding: EdgeInsets.symmetric(horizontal: 12.w),
+                padding: EdgeInsets.fromLTRB(
+                  12.w,
+                  30.h,
+                  12.w,
+                  navigationCompensation + 48.h,
+                ),
                 children: [
-                  SizedBox(
-                    height: 30.h,
-                  ),
                   EmailTextField(
                     controller: _searchController,
                     hintText: "Address",
@@ -501,43 +508,47 @@ class _ShippingAddressState extends State<ShippingAddress> {
                   SizedBox(
                     height: 15.h,
                   ),
-                  CustomButton(
-                      onTap: () {
-                        if (_searchController.text.isNotEmpty &&
-                            _instructions.text.isNotEmpty &&
-                            _selectedPosition != null) {
-                          AddressModel model = AddressModel(
-                              addressLine1: _searchController.text,
-                              addressModelDefault: locationController.isDefault,
-                              deliveryInstructions: _instructions.text,
-                              latitude: _selectedPosition!.latitude,
-                              longitude: _selectedPosition!.longitude);
+                  Padding(
+                    padding: EdgeInsets.only(bottom: navigationCompensation),
+                    child: CustomButton(
+                        onTap: () {
+                          if (_searchController.text.isNotEmpty &&
+                              _instructions.text.isNotEmpty &&
+                              _selectedPosition != null) {
+                            AddressModel model = AddressModel(
+                                addressLine1: _searchController.text,
+                                addressModelDefault:
+                                    locationController.isDefault,
+                                deliveryInstructions: _instructions.text,
+                                latitude: _selectedPosition!.latitude,
+                                longitude: _selectedPosition!.longitude);
 
-                          String data = addressModelToJson(model);
+                            String data = addressModelToJson(model);
 
-                          if (_isEditing && widget.initialAddress != null) {
-                            locationController.updateAddress(
-                              widget.initialAddress!.id,
-                              data,
-                              onAddressUpdated: widget.onAddressSet,
-                              shouldPopOnSave: widget.shouldPopOnSave,
-                            );
+                            if (_isEditing && widget.initialAddress != null) {
+                              locationController.updateAddress(
+                                widget.initialAddress!.id,
+                                data,
+                                onAddressUpdated: widget.onAddressSet,
+                                shouldPopOnSave: widget.shouldPopOnSave,
+                              );
+                            } else {
+                              locationController.addAddress(data,
+                                  onAddressSet: widget.onAddressSet,
+                                  shouldPopOnSave: widget.shouldPopOnSave);
+                            }
                           } else {
-                            locationController.addAddress(data,
-                                onAddressSet: widget.onAddressSet,
-                                shouldPopOnSave: widget.shouldPopOnSave);
+                            Get.snackbar(
+                              "Thiếu thông tin",
+                              "Vui lòng điền đầy đủ thông tin và chọn vị trí trên bản đồ",
+                              backgroundColor: kRed,
+                              colorText: kLightWhite,
+                            );
                           }
-                        } else {
-                          Get.snackbar(
-                            "Thiếu thông tin",
-                            "Vui lòng điền đầy đủ thông tin và chọn vị trí trên bản đồ",
-                            backgroundColor: kRed,
-                            colorText: kLightWhite,
-                          );
-                        }
-                      },
-                      btnHeight: 45,
-                      text: _isEditing ? "CẬP NHẬT" : "S U B M I T")
+                        },
+                        btnHeight: 45,
+                        text: _isEditing ? "CẬP NHẬT" : "S U B M I T"),
+                  )
                 ],
               ),
             ),

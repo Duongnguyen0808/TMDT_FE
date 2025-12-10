@@ -3,6 +3,7 @@ import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/back_ground_container.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/constants/constants.dart';
+import 'package:appliances_flutter/extensions/auto_tr_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +12,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:appliances_flutter/utils/currency.dart';
+import 'package:appliances_flutter/services/language_service.dart';
 
 class VoucherPage extends StatefulWidget {
   const VoucherPage({super.key});
@@ -27,6 +29,7 @@ class _VoucherPageState extends State<VoucherPage>
   late TabController _tabController;
   // Debug log buffer for FE
   String _debugLog = '';
+  final LanguageService _languageService = LanguageService();
   void _log(String msg) {
     final line = '[VoucherFE] ${DateTime.now().toIso8601String()}  $msg';
     debugPrint(line);
@@ -131,8 +134,8 @@ class _VoucherPageState extends State<VoucherPage>
   void _copyVoucherCode(String code) {
     Clipboard.setData(ClipboardData(text: code));
     Get.snackbar(
-      'Đã sao chép',
-      'Mã giảm giá "$code" đã được sao chép',
+      'voucher_copy_title'.tr,
+      'voucher_copy_message'.trParams({'code': code}),
       backgroundColor: kPrimary,
       colorText: kLightWhite,
       snackPosition: SnackPosition.BOTTOM,
@@ -145,7 +148,7 @@ class _VoucherPageState extends State<VoucherPage>
       final box = GetStorage();
       final token = box.read('token');
       if (token == null) {
-        Get.snackbar('Cần đăng nhập', 'Vui lòng đăng nhập để nhận voucher',
+        Get.snackbar('voucher_login_required'.tr, 'voucher_login_message'.tr,
             backgroundColor: kRed, colorText: kLightWhite);
         return;
       }
@@ -162,17 +165,19 @@ class _VoucherPageState extends State<VoucherPage>
           'Resp /claim: status=${resp.statusCode}, bytes=${resp.bodyBytes.length}');
       final data = jsonDecode(resp.body);
       if (resp.statusCode == 200 && data['status'] == true) {
-        Get.snackbar('Thành công', 'Đã nhận voucher $code',
+        Get.snackbar('voucher_claim_success_title'.tr,
+            'voucher_claim_success_message'.trParams({'code': code}),
             backgroundColor: kPrimary, colorText: kLightWhite);
         await _fetchAll();
       } else {
         _log('Claim failed: ${data['message'] ?? 'unknown'}');
-        Get.snackbar('Không nhận được', data['message'] ?? 'Vui lòng thử lại',
+        Get.snackbar('voucher_claim_fail_title'.tr,
+            data['message'] ?? 'voucher_claim_retry'.tr,
             backgroundColor: kRed, colorText: kLightWhite);
       }
     } catch (e) {
       _log('Claim exception: $e');
-      Get.snackbar('Lỗi', e.toString(),
+      Get.snackbar('voucher_error_title'.tr, e.toString(),
           backgroundColor: kRed, colorText: kLightWhite);
     }
   }
@@ -181,14 +186,18 @@ class _VoucherPageState extends State<VoucherPage>
     final type = v['type'];
     final value = (v['value'] ?? 0);
     final maxDiscount = v['maxDiscount'];
+    final isEnglish = _languageService.isEnglish();
     if (type == 'percentage') {
-      String text = 'Giảm ${value.toString()}%';
+      String text =
+          isEnglish ? 'Save ${value.toString()}%' : 'Giảm ${value.toString()}%';
       if (maxDiscount != null) {
-        text += ' (Tối đa ${usdToVndText((maxDiscount as num).toDouble())})';
+        final cap = usdToVndText((maxDiscount as num).toDouble());
+        text += isEnglish ? ' (Up to $cap)' : ' (Tối đa $cap)';
       }
       return text;
     }
-    return 'Giảm ${usdToVndText((value as num).toDouble())}';
+    final absolute = usdToVndText((value as num).toDouble());
+    return isEnglish ? 'Save $absolute' : 'Giảm $absolute';
   }
 
   String? _minOrderText(Map<String, dynamic> v) {
@@ -196,7 +205,7 @@ class _VoucherPageState extends State<VoucherPage>
     if (min == null) return null;
     final n = (min as num).toDouble();
     if (n <= 0) return null;
-    return 'Đơn tối thiểu: ${usdToVndText(n)}';
+    return 'voucher_min_order'.trParams({'amount': usdToVndText(n)});
   }
 
   String? _expiryText(Map<String, dynamic> v) {
@@ -204,7 +213,10 @@ class _VoucherPageState extends State<VoucherPage>
     if (raw == null) return null;
     try {
       final dt = DateTime.parse(raw.toString());
-      return 'HSD: ${DateFormat('dd/MM/yyyy').format(dt)}';
+      final formatted = DateFormat('dd/MM/yyyy').format(dt);
+      return _languageService.isEnglish()
+          ? 'Expires: $formatted'
+          : 'HSD: $formatted';
     } catch (_) {
       return null;
     }
@@ -218,7 +230,7 @@ class _VoucherPageState extends State<VoucherPage>
         foregroundColor: kLightWhite,
         elevation: 0,
         title: ReusableText(
-          text: 'Phiếu giảm giá',
+          text: 'vouchers'.tr,
           style: appStyle(18, kLightWhite, FontWeight.w600),
         ),
         leading: IconButton(
@@ -227,7 +239,7 @@ class _VoucherPageState extends State<VoucherPage>
         ),
         actions: [
           IconButton(
-            tooltip: 'Xem log',
+            tooltip: 'voucher_view_log'.tr,
             icon: const Icon(Icons.bug_report),
             onPressed: () {
               showModalBottomSheet(
@@ -244,7 +256,7 @@ class _VoucherPageState extends State<VoucherPage>
                       child: SingleChildScrollView(
                         controller: scrollController,
                         child: SelectableText(
-                          _debugLog.isEmpty ? 'Chưa có log' : _debugLog,
+                          _debugLog.isEmpty ? 'voucher_no_log'.tr : _debugLog,
                           style: TextStyle(fontSize: 12.sp, color: kDark),
                         ),
                       ),
@@ -258,9 +270,9 @@ class _VoucherPageState extends State<VoucherPage>
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: kLightWhite,
-          tabs: const [
-            Tab(text: 'Có thể nhận'),
-            Tab(text: 'Đã nhận'),
+          tabs: [
+            Tab(text: 'voucher_tab_available'.tr),
+            Tab(text: 'voucher_tab_claimed'.tr),
           ],
         ),
       ),
@@ -283,7 +295,7 @@ class _VoucherPageState extends State<VoucherPage>
                                     size: 100.h, color: kGray),
                                 SizedBox(height: 16.h),
                                 ReusableText(
-                                  text: 'Không có voucher để nhận',
+                                  text: 'voucher_empty_available'.tr,
                                   style: appStyle(16, kGray, FontWeight.w500),
                                 ),
                               ],
@@ -303,27 +315,44 @@ class _VoucherPageState extends State<VoucherPage>
                                 child: ListTile(
                                   leading: const Icon(Icons.local_offer,
                                       color: kPrimary),
-                                  title: Text(title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis),
+                                  title: ReusableText(
+                                    text: title,
+                                    style: appStyle(13, kDark, FontWeight.w600),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    autoTranslate: true,
+                                  ),
                                   subtitle: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(discountLine),
+                                      ReusableText(
+                                        text: discountLine,
+                                        style: appStyle(
+                                            12, kDark, FontWeight.w400),
+                                        autoTranslate: true,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                       if (minOrderLine != null)
-                                        Text(minOrderLine,
-                                            style: TextStyle(
-                                                color: kGray, fontSize: 12.sp)),
+                                        ReusableText(
+                                          text: minOrderLine,
+                                          style: appStyle(
+                                              11, kGray, FontWeight.w400),
+                                          autoTranslate: true,
+                                        ),
                                       if (expiryLine != null)
-                                        Text(expiryLine,
-                                            style: TextStyle(
-                                                color: kGray, fontSize: 12.sp)),
+                                        ReusableText(
+                                          text: expiryLine,
+                                          style: appStyle(
+                                              11, kGray, FontWeight.w400),
+                                          autoTranslate: true,
+                                        ),
                                     ],
                                   ),
                                   trailing: TextButton(
                                     onPressed: () => _claimVoucher(code),
-                                    child: const Text('Nhận'),
+                                    child: Text('voucher_button_claim'.tr),
                                   ),
                                 ),
                               );
@@ -342,7 +371,7 @@ class _VoucherPageState extends State<VoucherPage>
                                     size: 100.h, color: kGray),
                                 SizedBox(height: 16.h),
                                 ReusableText(
-                                  text: 'Chưa có voucher đã nhận',
+                                  text: 'voucher_empty_claimed'.tr,
                                   style: appStyle(16, kGray, FontWeight.w500),
                                 ),
                               ],
@@ -367,23 +396,42 @@ class _VoucherPageState extends State<VoucherPage>
                                         : Icons.check_circle,
                                     color: used ? kGray : kSecondary,
                                   ),
-                                  title: Text(title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis),
+                                  title: ReusableText(
+                                    text: title,
+                                    style: appStyle(13, kDark, FontWeight.w600),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    autoTranslate: true,
+                                  ),
                                   subtitle: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(code),
-                                      Text(discountLine),
+                                      ReusableText(
+                                        text: code,
+                                        style: appStyle(
+                                            12, kDark, FontWeight.w500),
+                                      ),
+                                      ReusableText(
+                                        text: discountLine,
+                                        style: appStyle(
+                                            12, kDark, FontWeight.w400),
+                                        autoTranslate: true,
+                                      ),
                                       if (minOrderLine != null)
-                                        Text(minOrderLine,
-                                            style: TextStyle(
-                                                color: kGray, fontSize: 12.sp)),
+                                        ReusableText(
+                                          text: minOrderLine,
+                                          style: appStyle(
+                                              11, kGray, FontWeight.w400),
+                                          autoTranslate: true,
+                                        ),
                                       if (expiryLine != null)
-                                        Text(expiryLine,
-                                            style: TextStyle(
-                                                color: kGray, fontSize: 12.sp)),
+                                        ReusableText(
+                                          text: expiryLine,
+                                          style: appStyle(
+                                              11, kGray, FontWeight.w400),
+                                          autoTranslate: true,
+                                        ),
                                     ],
                                   ),
                                   trailing: Container(
@@ -394,7 +442,9 @@ class _VoucherPageState extends State<VoucherPage>
                                       borderRadius: BorderRadius.circular(8.r),
                                     ),
                                     child: Text(
-                                      used ? 'Đã dùng' : 'Đã nhận',
+                                      used
+                                          ? 'voucher_status_used'.tr
+                                          : 'voucher_status_claimed'.tr,
                                       style: TextStyle(
                                           color: used ? kDark : kPrimary,
                                           fontWeight: FontWeight.w600),

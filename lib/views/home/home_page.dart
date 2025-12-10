@@ -95,7 +95,7 @@ class HomePage extends StatelessWidget {
                           children: [
                             Heading(
                               more: true,
-                              text: "${'explore'.tr} \${controller.titleValue}",
+                              text: "${'explore'.tr} ${controller.titleValue}",
                               onTap: () {
                                 Get.to(() => TodaySuggestionsPage(),
                                     transition: Transition.cupertino,
