@@ -145,6 +145,14 @@ class LoginController extends GetxController {
   }
 
   void logout() async {
+    final keysToPreserve = ['favorites', 'app_language', 'app_currency'];
+    final Map<String, dynamic> preservedValues = {};
+    for (final key in keysToPreserve) {
+      final value = box.read(key);
+      if (value != null) {
+        preservedValues[key] = value;
+      }
+    }
     try {
       await FirebaseAuth.instance.signOut();
     } catch (e) {
@@ -152,6 +160,9 @@ class LoginController extends GetxController {
     }
 
     await box.erase();
+    for (final entry in preservedValues.entries) {
+      await box.write(entry.key, entry.value);
+    }
     Get.offAll(() => MainScreen(),
         transition: Transition.fade,
         duration: const Duration(milliseconds: 900));
