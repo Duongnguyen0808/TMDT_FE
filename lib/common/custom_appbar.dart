@@ -45,46 +45,50 @@ class _CustomAppBarState extends State<CustomAppBar> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                CircleAvatar(
-                  radius: 22.r,
-                  backgroundColor: kSecondary,
-                  backgroundImage: const NetworkImage(
-                      'https://i.pinimg.com/originals/86/2a/e4/862ae44a666b8646c4a82294d7bc1f33.jpg'),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(bottom: 6.h, left: 8.w),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ReusableText(
-                          text: "deliver_to".tr,
-                          style: appStyle(13, kSecondary, FontWeight.w600)),
-                      Obx(
-                        () => SizedBox(
-                          width: width * 0.65,
-                          child: Text(
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  CircleAvatar(
+                    radius: 22.r,
+                    backgroundColor: kSecondary,
+                    backgroundImage: const NetworkImage(
+                        'https://i.pinimg.com/originals/86/2a/e4/862ae44a666b8646c4a82294d7bc1f33.jpg'),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: 6.h, left: 8.w),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ReusableText(
+                              text: "deliver_to".tr,
+                              style: appStyle(13, kSecondary, FontWeight.w600)),
+                          Obx(
+                            () => Text(
                               controller.address1 == ""
                                   ? controller.address == ''
                                       ? "enable_location".tr
                                       : controller.address
                                   : controller.address1,
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style:
-                                  appStyle(11, kGrayLight, FontWeight.normal)),
-                        ),
-                      )
-                    ],
+                                  appStyle(11, kGrayLight, FontWeight.normal),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             Text(
               getTimeOfDay(),
-              style: const TextStyle(fontSize: 35),
+              style: const TextStyle(fontSize: 32),
             )
           ],
         ),

@@ -95,7 +95,8 @@ class UserLocationController extends GetxController {
     }
   }
 
-  void addAddress(String data, {VoidCallback? onAddressSet}) async {
+  Future<void> addAddress(String data,
+      {VoidCallback? onAddressSet, bool shouldPopOnSave = false}) async {
     final box = GetStorage();
     String accessToken = box.read("token");
 
@@ -111,21 +112,56 @@ class UserLocationController extends GetxController {
 
       if (response.statusCode == 201) {
         Get.snackbar("Thêm địa chỉ thành công", "Địa chỉ của bạn đã được lưu",
-            colorText: kLightWhite,
-            backgroundColor: kPrimary);
+            colorText: kLightWhite, backgroundColor: kPrimary);
 
-        // Call the callback if provided
-        if (onAddressSet != null) {
-          onAddressSet();
+        onAddressSet?.call();
+
+        if (shouldPopOnSave) {
+          Get.back(result: true);
+        } else {
+          Get.offAll(() => MainScreen());
         }
-
-        Get.offAll(() => MainScreen());
       } else {
         var error = apiErrorFromJson(response.body);
 
         Get.snackbar("Thêm địa chỉ thất bại", error.message,
-            colorText: kLightWhite,
-            backgroundColor: kRed);
+            colorText: kLightWhite, backgroundColor: kRed);
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> updateAddress(String addressId, String data,
+      {VoidCallback? onAddressUpdated, bool shouldPopOnSave = true}) async {
+    final box = GetStorage();
+    String accessToken = box.read("token");
+
+    Uri url = Uri.parse('$appBaseUrl/api/address/$addressId');
+
+    Map<String, String> headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $accessToken'
+    };
+
+    try {
+      var response = await http.put(url, headers: headers, body: data);
+
+      if (response.statusCode == 200) {
+        Get.snackbar(
+            "Cập nhật địa chỉ thành công", "Địa chỉ của bạn đã được cập nhật",
+            colorText: kLightWhite, backgroundColor: kPrimary);
+
+        onAddressUpdated?.call();
+
+        if (shouldPopOnSave) {
+          Get.back(result: true);
+        }
+      } else {
+        var error = apiErrorFromJson(response.body);
+
+        Get.snackbar("Cập nhật địa chỉ thất bại", error.message,
+            colorText: kLightWhite, backgroundColor: kRed);
       }
     } catch (e) {
       debugPrint(e.toString());

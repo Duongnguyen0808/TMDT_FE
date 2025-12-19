@@ -1,9 +1,14 @@
+import 'package:appliances_flutter/constants/constants.dart';
+import 'package:appliances_flutter/services/currency_service.dart';
 import 'package:appliances_flutter/services/language_service.dart';
+import 'package:appliances_flutter/views/auth/change_password_page.dart';
+import 'package:appliances_flutter/views/profile/my_reviews_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:appliances_flutter/constants/constants.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
+
+const String _appVersion = '1.0.0';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -14,12 +19,15 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final languageService = LanguageService();
+  final currencyService = CurrencyService();
   String currentLanguage = 'vi';
+  String currentCurrency = CurrencyService.vnd;
 
   @override
   void initState() {
     super.initState();
     currentLanguage = languageService.getCurrentLanguage();
+    currentCurrency = currencyService.getCurrentCurrency();
   }
 
   void _showLanguageDialog() {
@@ -57,6 +65,72 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         );
       },
+    );
+  }
+
+  void _showCurrencySheet() {
+    final options = currencyService.supportedCurrencies;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: 12.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 4.h),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'select_currency'.tr,
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                for (final option in options)
+                  RadioListTile<String>(
+                    title: Text(option.labelKey.tr),
+                    subtitle: Text(option.descriptionKey.tr),
+                    value: option.code,
+                    groupValue: currentCurrency,
+                    onChanged: (String? value) {
+                      if (value != null) {
+                        Navigator.pop(context);
+                        _changeCurrency(value);
+                      }
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _changeCurrency(String code) async {
+    await currencyService.setCurrency(code);
+
+    setState(() {
+      currentCurrency = code;
+    });
+
+    Get.forceAppUpdate();
+
+    Get.snackbar(
+      'success'.tr,
+      '${'currency_changed'.tr} ${currencyService.getCurrencyDisplayName(code)}',
+      colorText: kWhite,
+      backgroundColor: kPrimary,
+      icon: const Icon(Icons.check_circle, color: kWhite),
     );
   }
 
@@ -158,11 +232,146 @@ class _SettingsPageState extends State<SettingsPage> {
                       color: kGray,
                     ),
                   ),
+                  const Divider(height: 1),
+                  ListTile(
+                    onTap: _showCurrencySheet,
+                    leading: Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: kSecondary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Ionicons.cash_outline,
+                        color: kSecondary,
+                        size: 24.sp,
+                      ),
+                    ),
+                    title: Text(
+                      'currency'.tr,
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${currencyService.getCurrencyDisplayName()} - ${currencyService.getCurrencyDescription()}',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: kGray,
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16.sp,
+                      color: kGray,
+                    ),
+                  ),
                 ],
               ),
             ),
 
             SizedBox(height: 16.h),
+
+            // Security Section
+            Container(
+              decoration: BoxDecoration(
+                color: kWhite,
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(16.w),
+                    child: Text(
+                      'security_section_title'.tr,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: kGray,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
+                    child: Text(
+                      'security_version_caption'
+                          .trParams({'version': _appVersion}),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: kGray,
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    onTap: () {
+                      Get.to(
+                        () => const ChangePasswordPage(),
+                        transition: Transition.fadeIn,
+                        duration: const Duration(milliseconds: 400),
+                      );
+                    },
+                    leading: Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: kSecondary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Ionicons.lock_closed_outline,
+                        color: kSecondary,
+                        size: 24.sp,
+                      ),
+                    ),
+                    title: Text(
+                      'change_password'.tr,
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16.sp,
+                      color: kGray,
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    onTap: () {
+                      Get.to(() => const MyReviewsPage(),
+                          transition: Transition.cupertino,
+                          duration: const Duration(milliseconds: 400));
+                    },
+                    leading: Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: kPrimary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Ionicons.chatbubble_ellipses_outline,
+                        color: kPrimary,
+                        size: 24.sp,
+                      ),
+                    ),
+                    title: Text(
+                      'my_reviews'.tr,
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16.sp,
+                      color: kGray,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
             // App Info Section
             Container(
@@ -204,10 +413,11 @@ class _SettingsPageState extends State<SettingsPage> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    subtitle: Text(
-                      "1.0.0",
+                    trailing: Text(
+                      _appVersion,
                       style: TextStyle(
                         fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
                         color: kGray,
                       ),
                     ),

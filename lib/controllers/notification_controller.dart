@@ -24,14 +24,16 @@ class NotificationController extends GetxController {
 
     // Get user orders to create notifications
     try {
-      String accessToken = box.read('accessToken');
+      // Use the same key as login_controller writes
+      String? accessToken = box.read('token');
       final url = Uri.parse('$appBaseUrl/api/orders');
 
       final response = await http.get(
         url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
+          if (accessToken != null && accessToken.isNotEmpty)
+            'Authorization': 'Bearer $accessToken',
         },
       );
 

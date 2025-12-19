@@ -30,6 +30,28 @@ class _RatingPageState extends State<RatingPage> {
   bool _isCheckingPurchase = true;
   bool _hasPurchased = false;
 
+  String get _targetTitleText {
+    switch (widget.ratingType) {
+      case 'Driver':
+        return 'Đánh giá tài xế';
+      case 'Appliances':
+        return 'Đánh giá sản phẩm';
+      default:
+        return 'Đánh giá cửa hàng';
+    }
+  }
+
+  String get _targetLabelText {
+    switch (widget.ratingType) {
+      case 'Driver':
+        return 'tài xế';
+      case 'Appliances':
+        return 'sản phẩm';
+      default:
+        return 'cửa hàng';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -90,7 +112,7 @@ class _RatingPageState extends State<RatingPage> {
     if (_isCheckingPurchase) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Đánh giá',
+          title: Text(_targetTitleText,
               style: appStyle(18, kLightWhite, FontWeight.w600)),
           backgroundColor: kPrimary,
           foregroundColor: kLightWhite,
@@ -102,7 +124,7 @@ class _RatingPageState extends State<RatingPage> {
     if (!_hasPurchased) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Đánh giá',
+          title: Text(_targetTitleText,
               style: appStyle(18, kLightWhite, FontWeight.w600)),
           backgroundColor: kPrimary,
           foregroundColor: kLightWhite,
@@ -129,7 +151,7 @@ class _RatingPageState extends State<RatingPage> {
                 ),
                 SizedBox(height: 12.h),
                 Text(
-                  'Bạn cần mua hàng và nhận được sản phẩm mới có thể đánh giá',
+                  'Bạn cần hoàn tất giao dịch với ${_targetLabelText} này trước khi đánh giá',
                   textAlign: TextAlign.center,
                   style: appStyle(14, kGray, FontWeight.normal),
                 ),
@@ -158,7 +180,7 @@ class _RatingPageState extends State<RatingPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Đánh giá cửa hàng',
+        title: Text(_targetTitleText,
             style: appStyle(18, kLightWhite, FontWeight.w600)),
         backgroundColor: kPrimary,
         foregroundColor: kLightWhite,
@@ -172,7 +194,7 @@ class _RatingPageState extends State<RatingPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Bạn cảm thấy thế nào về cửa hàng này?',
+            Text('Bạn cảm thấy thế nào về ${_targetLabelText} này?',
                 style: appStyle(16, kDark, FontWeight.w600)),
             SizedBox(height: 20.h),
             Center(
@@ -196,7 +218,7 @@ class _RatingPageState extends State<RatingPage> {
               ),
             ),
             SizedBox(height: 20.h),
-            Text('Chia sẻ thêm về trải nghiệm của bạn:',
+            Text('Chia sẻ thêm về trải nghiệm với ${_targetLabelText}:',
                 style: appStyle(14, kDark, FontWeight.w500)),
             SizedBox(height: 10.h),
             TextField(

@@ -11,7 +11,9 @@ class EmailTextField extends StatelessWidget {
       this.initialValue,
       this.controller,
       this.hintText,
-      this.prefixIcon});
+      this.prefixIcon,
+      this.isEmail = false,
+      this.validator});
 
   final void Function()? onEditingComplete;
   final TextInputType? keyboardType;
@@ -19,6 +21,8 @@ class EmailTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String? hintText;
   final Widget? prefixIcon;
+  final bool isEmail;
+  final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
@@ -29,13 +33,20 @@ class EmailTextField extends StatelessWidget {
       keyboardType: keyboardType ?? TextInputType.emailAddress,
       initialValue: initialValue,
       controller: controller,
-      validator: (value) {
-        if (value!.isEmpty) {
-          return "Vui lòng nhập thông tin hợp lệ";
-        } else {
-          return null;
-        }
-      },
+      validator: validator ??
+          (value) {
+            final v = value ?? '';
+            if (v.isEmpty) {
+              return "Vui lòng nhập thông tin hợp lệ";
+            }
+            if (isEmail) {
+              final emailRegex = RegExp(r"^[\w\.-]+@[\w\.-]+\.[A-Za-z]{2,}");
+              if (!emailRegex.hasMatch(v)) {
+                return "Email không hợp lệ";
+              }
+            }
+            return null;
+          },
       style: appStyle(12, kGray, FontWeight.normal),
       decoration: InputDecoration(
           hintText: hintText,

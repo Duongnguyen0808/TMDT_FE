@@ -13,8 +13,10 @@ import 'package:get/state_manager.dart';
 
 class AppliancesList extends HookWidget {
   final bool useRecommendation; // true = random, false = all
+  final double? maxPrice; // optional: filter by max price (e.g., 200000)
 
-  const AppliancesList({super.key, this.useRecommendation = false});
+  const AppliancesList(
+      {super.key, this.useRecommendation = false, this.maxPrice});
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +24,10 @@ class AppliancesList extends HookWidget {
     final hookResults =
         useFetchAppliances(useRecommendation ? "recommendation" : "");
     List<AppliancesModel>? appliancess = hookResults.data;
+    // Apply client-side price filter if requested
+    final filtered = (appliancess ?? [])
+        .where((p) => maxPrice == null || (p.price <= (maxPrice!)))
+        .toList();
     final isLoading = hookResults.isLoading;
     return Container(
       height: 184.h,
@@ -30,8 +36,8 @@ class AppliancesList extends HookWidget {
           ? NearbyShimmer()
           : ListView(
               scrollDirection: Axis.horizontal,
-              children: List.generate(appliancess!.length, (i) {
-                var appliances = appliancess[i];
+              children: List.generate(filtered.length, (i) {
+                var appliances = filtered[i];
                 return AppliancesWidget(
                     onTap: () {
                       Get.to(() => AppliancesPage(appliances: appliances));

@@ -3,10 +3,12 @@ import 'package:appliances_flutter/common/reusable_text.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/models/address_response.dart';
 import 'package:appliances_flutter/hooks/set_default_address.dart';
+import 'package:appliances_flutter/views/profile/shipping_address.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:get/get.dart';
 
 class AddressTile extends HookWidget {
   const AddressTile({super.key, required this.address, this.onAddressUpdated});
@@ -38,9 +40,9 @@ class AddressTile extends HookWidget {
         onAddressUpdated?.call();
       } else {
         if (context.mounted) {
-          String errorMessage = setDefaultHook.apiError?.message ?? 
-                               setDefaultHook.error?.toString() ?? 
-                               'Không thể đặt địa chỉ mặc định';
+          String errorMessage = setDefaultHook.apiError?.message ??
+              setDefaultHook.error?.toString() ??
+              'Không thể đặt địa chỉ mặc định';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMessage),
@@ -48,6 +50,18 @@ class AddressTile extends HookWidget {
             ),
           );
         }
+      }
+    }
+
+    Future<void> _editAddress() async {
+      final result = await Get.to(() => ShippingAddress(
+            initialAddress: address,
+            onAddressSet: onAddressUpdated,
+            shouldPopOnSave: true,
+          ));
+
+      if (result == true && onAddressUpdated != null) {
+        onAddressUpdated!();
       }
     }
 
@@ -59,19 +73,32 @@ class AddressTile extends HookWidget {
         color: address.addressResponseDefault == true ? Colors.green : kPrimary,
         size: 28.h,
       ),
-      trailing: address.addressResponseDefault == true 
-          ? Icon(
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (address.addressResponseDefault == true)
+            Icon(
               Icons.check_circle,
               color: Colors.green,
               size: 20.h,
             )
-          : setDefaultHook.isLoading 
-              ? SizedBox(
-                  width: 20.w,
-                  height: 20.h,
-                  child: const CircularProgressIndicator(strokeWidth: 2),
-                )
-              : null,
+          else if (setDefaultHook.isLoading)
+            SizedBox(
+              width: 20.w,
+              height: 20.h,
+              child: const CircularProgressIndicator(strokeWidth: 2),
+            ),
+          IconButton(
+            icon: Icon(
+              Icons.edit_outlined,
+              size: 20.h,
+              color: kPrimary,
+            ),
+            tooltip: 'Chỉnh sửa địa chỉ',
+            onPressed: setDefaultHook.isLoading ? null : _editAddress,
+          ),
+        ],
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10.r),
       ),
@@ -82,11 +109,12 @@ class AddressTile extends HookWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ReusableText(
-              text: address.addressResponseDefault == true 
-                  ? "Địa chỉ mặc định" 
+              text: address.addressResponseDefault == true
+                  ? "Địa chỉ mặc định"
                   : "Tap to set address as default",
-              style: appStyle(8, 
-                  address.addressResponseDefault == true ? Colors.green : kGray, 
+              style: appStyle(
+                  8,
+                  address.addressResponseDefault == true ? Colors.green : kGray,
                   FontWeight.w500)),
         ],
       ),

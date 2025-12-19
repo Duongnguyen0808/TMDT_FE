@@ -118,16 +118,22 @@ class Voucher {
   }
 
   // Get formatted discount text for display
-  String getDiscountText() {
+  String getDiscountText({String locale = 'vi'}) {
+    final normalized = locale.toLowerCase();
+    final bool isEnglish = normalized.startsWith('en');
+
     if (type == 'percentage') {
-      String text = 'Giảm ${value.toInt()}%';
+      String text =
+          isEnglish ? 'Save ${value.toInt()}%' : 'Giảm ${value.toInt()}%';
       if (maxDiscount != null) {
-        text += ' (Tối đa ${maxDiscount!.toInt()}đ)';
+        final cap = '${maxDiscount!.toInt()}đ';
+        text += isEnglish ? ' (Up to $cap)' : ' (Tối đa $cap)';
       }
       return text;
-    } else {
-      return 'Giảm ${value.toInt()}đ';
     }
+
+    final amount = '${value.toInt()}đ';
+    return isEnglish ? 'Save $amount' : 'Giảm $amount';
   }
 
   // Check if voucher is still valid

@@ -19,6 +19,7 @@ class OrderRequest {
   final String paymentMethod;
   final String? promoCode;
   final double? discountAmount;
+  final double? deliveryDistanceKm;
 
   OrderRequest({
     required this.userId,
@@ -34,6 +35,7 @@ class OrderRequest {
     required this.paymentMethod,
     this.promoCode,
     this.discountAmount,
+    this.deliveryDistanceKm,
   });
 
   factory OrderRequest.fromJson(Map<String, dynamic> json) => OrderRequest(
@@ -55,6 +57,9 @@ class OrderRequest {
         discountAmount: json["discountAmount"] == null
             ? null
             : (json["discountAmount"] as num).toDouble(),
+        deliveryDistanceKm: json["deliveryDistanceKm"] == null
+            ? null
+            : (json["deliveryDistanceKm"] as num).toDouble(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -71,6 +76,7 @@ class OrderRequest {
         "paymentMethod": paymentMethod,
         "promoCode": promoCode ?? "",
         "discountAmount": discountAmount ?? 0.0,
+        "deliveryDistanceKm": deliveryDistanceKm,
       };
 }
 

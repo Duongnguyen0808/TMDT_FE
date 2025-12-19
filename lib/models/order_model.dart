@@ -17,6 +17,9 @@ class OrderModel {
   final String paymentMethod;
   final String paymentStatus;
   final String orderStatus;
+  final String? cancellationReason;
+  final String? cancelledBy;
+  final DateTime? cancelledAt;
   final String storeId;
   final List<double> storeCoords;
   final List<double> recipientCoords;
@@ -37,6 +40,9 @@ class OrderModel {
     required this.paymentMethod,
     required this.paymentStatus,
     required this.orderStatus,
+    this.cancellationReason,
+    this.cancelledBy,
+    this.cancelledAt,
     required this.storeId,
     required this.storeCoords,
     required this.recipientCoords,
@@ -59,6 +65,11 @@ class OrderModel {
         paymentMethod: json["paymentMethod"],
         paymentStatus: json["paymentStatus"],
         orderStatus: json["orderStatus"],
+        cancellationReason: json["cancellationReason"],
+        cancelledBy: json["cancelledBy"],
+        cancelledAt: json["cancelledAt"] != null
+            ? DateTime.parse(json["cancelledAt"])
+            : null,
         storeId: json["storeId"],
         storeCoords:
             List<double>.from(json["storeCoords"].map((x) => x?.toDouble())),
@@ -82,6 +93,9 @@ class OrderModel {
         "paymentMethod": paymentMethod,
         "paymentStatus": paymentStatus,
         "orderStatus": orderStatus,
+        "cancellationReason": cancellationReason,
+        "cancelledBy": cancelledBy,
+        "cancelledAt": cancelledAt?.toIso8601String(),
         "storeId": storeId,
         "storeCoords": List<dynamic>.from(storeCoords.map((x) => x)),
         "recipientCoords": List<dynamic>.from(recipientCoords.map((x) => x)),

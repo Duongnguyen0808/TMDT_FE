@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_collection_literals
 
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/back_ground_container.dart';
@@ -9,6 +10,7 @@ import 'package:appliances_flutter/common/shimmers/custom_button.dart';
 import 'package:appliances_flutter/constants/constants.dart';
 import 'package:appliances_flutter/controllers/user_location_controller.dart';
 import 'package:appliances_flutter/models/address_model.dart';
+import 'package:appliances_flutter/models/address_response.dart';
 import 'package:appliances_flutter/views/auth/widget/email_textfield.dart';
 import 'package:appliances_flutter/config/vietmap_config.dart';
 import 'package:flutter/cupertino.dart';
@@ -23,35 +25,64 @@ import 'package:http/http.dart' as http;
 import 'package:appliances_flutter/vendor/vietmap_platform.dart';
 
 class ShippingAddress extends StatefulWidget {
-  const ShippingAddress({super.key, this.onAddressSet});
+  const ShippingAddress({
+    super.key,
+    this.onAddressSet,
+    this.initialAddress,
+    this.shouldPopOnSave = false,
+  });
 
   final VoidCallback? onAddressSet;
+  final AddressResponse? initialAddress;
+  final bool shouldPopOnSave;
 
   @override
   State<ShippingAddress> createState() => _ShippingAddressState();
 }
 
 class _ShippingAddressState extends State<ShippingAddress> {
-  late final PageController _pageController = PageController(initialPage: 0);
+  late final PageController _pageController;
+  final UserLocationController locationController =
+      Get.put(UserLocationController());
   VietmapController? _mapController;
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _instructions = TextEditingController();
-  // _postalCode
   LatLng? _selectedPosition;
   List<dynamic> _placeList = [];
   List<dynamic> _selectedPlace = [];
+  bool get _isEditing => widget.initialAddress != null;
 
   @override
   void initState() {
-    _pageController.addListener(() {
-      setState(() {});
-    });
     super.initState();
+    _pageController = PageController(initialPage: _isEditing ? 1 : 0)
+      ..addListener(() {
+        setState(() {});
+      });
+
+    if (_isEditing) {
+      final addr = widget.initialAddress!;
+      _searchController.text = addr.addressLine1;
+      _instructions.text = addr.deliveryInstructions;
+      _selectedPosition = LatLng(addr.latitude, addr.longitude);
+      locationController.setIsDefault = addr.addressResponseDefault;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        locationController.setTabIndex = 1;
+        moveToSelectedPosition();
+      });
+    } else {
+      locationController.setTabIndex = 0;
+      locationController.setIsDefault = false;
+    }
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _searchController.dispose();
+    _instructions.dispose();
+    locationController.setTabIndex = 0;
+    locationController.setIsDefault = false;
     super.dispose();
   }
 
@@ -268,12 +299,15 @@ class _ShippingAddressState extends State<ShippingAddress> {
 
   @override
   Widget build(BuildContext context) {
-    final locationController = Get.put(UserLocationController());
+    final mediaQuery = MediaQuery.of(context);
+    final double bottomSafeInset = mediaQuery.padding.bottom;
+    final double bottomViewInset = mediaQuery.viewPadding.bottom;
+    final double navigationCompensation = math.max(bottomViewInset, 32.h);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kOffWhite,
         elevation: 0,
-        title: const Text('Shipping Address'),
+        title: Text(_isEditing ? 'Chỉnh sửa địa chỉ' : 'Shipping Address'),
         leading: Obx(
           () => Padding(
             padding: EdgeInsets.only(right: 0.w),
@@ -328,7 +362,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
           physics: const NeverScrollableScrollPhysics(),
           pageSnapping: false,
           onPageChanged: (index) {
-            _pageController.jumpToPage(index);
+            locationController.setTabIndex = index;
           },
           children: [
             Stack(
@@ -428,11 +462,13 @@ class _ShippingAddressState extends State<ShippingAddress> {
             BackGroundContainer(
               color: kOffWhite,
               child: ListView(
-                padding: EdgeInsets.symmetric(horizontal: 12.w),
+                padding: EdgeInsets.fromLTRB(
+                  12.w,
+                  30.h,
+                  12.w,
+                  navigationCompensation + 48.h,
+                ),
                 children: [
-                  SizedBox(
-                    height: 30.h,
-                  ),
                   EmailTextField(
                     controller: _searchController,
                     hintText: "Address",
@@ -472,33 +508,47 @@ class _ShippingAddressState extends State<ShippingAddress> {
                   SizedBox(
                     height: 15.h,
                   ),
-                  CustomButton(
-                      onTap: () {
-                        if (_searchController.text.isNotEmpty &&
-                            _instructions.text.isNotEmpty &&
-                            _selectedPosition != null) {
-                          AddressModel model = AddressModel(
-                              addressLine1: _searchController.text,
-                              addressModelDefault: locationController.isDefault,
-                              deliveryInstructions: _instructions.text,
-                              latitude: _selectedPosition!.latitude,
-                              longitude: _selectedPosition!.longitude);
+                  Padding(
+                    padding: EdgeInsets.only(bottom: navigationCompensation),
+                    child: CustomButton(
+                        onTap: () {
+                          if (_searchController.text.isNotEmpty &&
+                              _instructions.text.isNotEmpty &&
+                              _selectedPosition != null) {
+                            AddressModel model = AddressModel(
+                                addressLine1: _searchController.text,
+                                addressModelDefault:
+                                    locationController.isDefault,
+                                deliveryInstructions: _instructions.text,
+                                latitude: _selectedPosition!.latitude,
+                                longitude: _selectedPosition!.longitude);
 
-                          String data = addressModelToJson(model);
+                            String data = addressModelToJson(model);
 
-                          locationController.addAddress(data,
-                              onAddressSet: widget.onAddressSet);
-                        } else {
-                          Get.snackbar(
-                            "Thiếu thông tin",
-                            "Vui lòng điền đầy đủ thông tin và chọn vị trí trên bản đồ",
-                            backgroundColor: kRed,
-                            colorText: kLightWhite,
-                          );
-                        }
-                      },
-                      btnHeight: 45,
-                      text: "S U B M I T")
+                            if (_isEditing && widget.initialAddress != null) {
+                              locationController.updateAddress(
+                                widget.initialAddress!.id,
+                                data,
+                                onAddressUpdated: widget.onAddressSet,
+                                shouldPopOnSave: widget.shouldPopOnSave,
+                              );
+                            } else {
+                              locationController.addAddress(data,
+                                  onAddressSet: widget.onAddressSet,
+                                  shouldPopOnSave: widget.shouldPopOnSave);
+                            }
+                          } else {
+                            Get.snackbar(
+                              "Thiếu thông tin",
+                              "Vui lòng điền đầy đủ thông tin và chọn vị trí trên bản đồ",
+                              backgroundColor: kRed,
+                              colorText: kLightWhite,
+                            );
+                          }
+                        },
+                        btnHeight: 45,
+                        text: _isEditing ? "CẬP NHẬT" : "S U B M I T"),
+                  )
                 ],
               ),
             ),

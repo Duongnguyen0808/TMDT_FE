@@ -22,6 +22,7 @@ class ClientOrders {
   final String paymentMethod;
   final String paymentStatus;
   final String orderStatus;
+  final String? logisticStatus;
   final String storeId;
   final List<double> storeCoords;
   final List<double> recipientCoords;
@@ -31,8 +32,41 @@ class ClientOrders {
   final DateTime updatedAt;
   final int v;
   final String? cancellationReason;
+  final String? cancelledBy;
+  final DateTime? cancelledAt;
   final String? promoCode;
   final double? discountAmount;
+  final String? returnStatus;
+  final String? returnReason;
+  final double? refundAmount;
+  final String? pickupCode;
+  final DateTime? pickupCodeExpiresAt;
+  final DateTime? pickupReadyAt;
+  final DateTime? pickupAssignedAt;
+  final DateTime? pickupCheckinAt;
+  final PickupCheckinLocation? pickupCheckinLocation;
+  final DateTime? pickupConfirmedAt;
+  final String? shopReadyBy;
+  final String? shipperPickupBy;
+  final String? pickupNotes;
+  final String? handoverPhoto;
+  final String? deliveryProofPhoto;
+  final String? deliveryProofNote;
+  final String? deliveryProofRecipient;
+  final DateTime? deliveryProofAt;
+  final DeliveryProofLocation? deliveryProofLocation;
+  final String? shopDeliveryConfirmStatus;
+  final String? shopDeliveryConfirmNote;
+  final DateTime? shopDeliveryConfirmedAt;
+  final String? shopDeliveryRejectReason;
+  final DateTime? shopDeliveryRejectedAt;
+  final String? deliveryIssueStatus;
+  final String? deliveryIssueNote;
+  final String? customerDisputeStatus;
+  final String? customerDisputeNote;
+  final DateTime? customerDisputeAt;
+  final DateTime? customerDisputeResolvedAt;
+  final String? customerDisputeResolution;
 
   ClientOrders({
     required this.id,
@@ -46,6 +80,7 @@ class ClientOrders {
     required this.paymentMethod,
     required this.paymentStatus,
     required this.orderStatus,
+    this.logisticStatus,
     required this.storeId,
     required this.storeCoords,
     required this.recipientCoords,
@@ -55,8 +90,41 @@ class ClientOrders {
     required this.updatedAt,
     required this.v,
     this.cancellationReason,
+    this.cancelledBy,
+    this.cancelledAt,
     this.promoCode,
     this.discountAmount,
+    this.returnStatus,
+    this.returnReason,
+    this.refundAmount,
+    this.pickupCode,
+    this.pickupCodeExpiresAt,
+    this.pickupReadyAt,
+    this.pickupAssignedAt,
+    this.pickupCheckinAt,
+    this.pickupCheckinLocation,
+    this.pickupConfirmedAt,
+    this.shopReadyBy,
+    this.shipperPickupBy,
+    this.pickupNotes,
+    this.handoverPhoto,
+    this.deliveryProofPhoto,
+    this.deliveryProofNote,
+    this.deliveryProofRecipient,
+    this.deliveryProofAt,
+    this.deliveryProofLocation,
+    this.shopDeliveryConfirmStatus,
+    this.shopDeliveryConfirmNote,
+    this.shopDeliveryConfirmedAt,
+    this.shopDeliveryRejectReason,
+    this.shopDeliveryRejectedAt,
+    this.deliveryIssueStatus,
+    this.deliveryIssueNote,
+    this.customerDisputeStatus,
+    this.customerDisputeNote,
+    this.customerDisputeAt,
+    this.customerDisputeResolvedAt,
+    this.customerDisputeResolution,
   });
 
   factory ClientOrders.fromJson(Map<String, dynamic> json) => ClientOrders(
@@ -74,6 +142,7 @@ class ClientOrders {
         paymentMethod: json["paymentMethod"],
         paymentStatus: json["paymentStatus"],
         orderStatus: json["orderStatus"],
+        logisticStatus: json["logisticStatus"],
         storeId: json["storeId"],
         storeCoords:
             List<double>.from(json["storeCoords"].map((x) => x?.toDouble())),
@@ -85,8 +154,46 @@ class ClientOrders {
         updatedAt: DateTime.parse(json["updatedAt"]),
         v: json["__v"],
         cancellationReason: json["cancellationReason"],
+        cancelledBy: json["cancelledBy"],
+        cancelledAt: _parseDate(json["cancelledAt"]),
         promoCode: json["promoCode"],
         discountAmount: json["discountAmount"]?.toDouble(),
+        returnStatus: json["returnStatus"],
+        returnReason: json["returnReason"],
+        refundAmount: json["refundAmount"]?.toDouble(),
+        pickupCode: json["pickupCode"],
+        pickupCodeExpiresAt: _parseDate(json["pickupCodeExpiresAt"]),
+        pickupReadyAt: _parseDate(json["pickupReadyAt"]),
+        pickupAssignedAt: _parseDate(json["pickupAssignedAt"]),
+        pickupCheckinAt: _parseDate(json["pickupCheckinAt"]),
+        pickupCheckinLocation: json["pickupCheckinLocation"] is Map
+            ? PickupCheckinLocation.fromJson(json["pickupCheckinLocation"])
+            : null,
+        pickupConfirmedAt: _parseDate(json["pickupConfirmedAt"]),
+        shopReadyBy: json["shopReadyBy"],
+        shipperPickupBy: json["shipperPickupBy"],
+        pickupNotes: json["pickupNotes"],
+        handoverPhoto: json["handoverPhoto"],
+        deliveryProofPhoto: json["deliveryProofPhoto"],
+        deliveryProofNote: json["deliveryProofNote"],
+        deliveryProofRecipient: json["deliveryProofRecipient"],
+        deliveryProofAt: _parseDate(json["deliveryProofAt"]),
+        deliveryProofLocation: json["deliveryProofLocation"] is Map
+            ? DeliveryProofLocation.fromJson(json["deliveryProofLocation"])
+            : null,
+        shopDeliveryConfirmStatus: json["shopDeliveryConfirmStatus"],
+        shopDeliveryConfirmNote: json["shopDeliveryConfirmNote"],
+        shopDeliveryConfirmedAt: _parseDate(json["shopDeliveryConfirmedAt"]),
+        shopDeliveryRejectReason: json["shopDeliveryRejectReason"],
+        shopDeliveryRejectedAt: _parseDate(json["shopDeliveryRejectedAt"]),
+        deliveryIssueStatus: json["deliveryIssueStatus"],
+        deliveryIssueNote: json["deliveryIssueNote"],
+        customerDisputeStatus: json["customerDisputeStatus"],
+        customerDisputeNote: json["customerDisputeNote"],
+        customerDisputeAt: _parseDate(json["customerDisputeAt"]),
+        customerDisputeResolvedAt:
+            _parseDate(json["customerDisputeResolvedAt"]),
+        customerDisputeResolution: json["customerDisputeResolution"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -101,6 +208,7 @@ class ClientOrders {
         "paymentMethod": paymentMethod,
         "paymentStatus": paymentStatus,
         "orderStatus": orderStatus,
+        "logisticStatus": logisticStatus,
         "storeId": storeId,
         "storeCoords": List<dynamic>.from(storeCoords.map((x) => x)),
         "recipientCoords": List<dynamic>.from(recipientCoords.map((x) => x)),
@@ -110,9 +218,93 @@ class ClientOrders {
         "updatedAt": updatedAt.toIso8601String(),
         "__v": v,
         "cancellationReason": cancellationReason,
+        "cancelledBy": cancelledBy,
+        "cancelledAt": cancelledAt?.toIso8601String(),
         "promoCode": promoCode,
         "discountAmount": discountAmount,
+        "returnStatus": returnStatus,
+        "returnReason": returnReason,
+        "refundAmount": refundAmount,
+        "pickupCode": pickupCode,
+        "pickupCodeExpiresAt": pickupCodeExpiresAt?.toIso8601String(),
+        "pickupReadyAt": pickupReadyAt?.toIso8601String(),
+        "pickupAssignedAt": pickupAssignedAt?.toIso8601String(),
+        "pickupCheckinAt": pickupCheckinAt?.toIso8601String(),
+        "pickupCheckinLocation": pickupCheckinLocation?.toJson(),
+        "pickupConfirmedAt": pickupConfirmedAt?.toIso8601String(),
+        "shopReadyBy": shopReadyBy,
+        "shipperPickupBy": shipperPickupBy,
+        "pickupNotes": pickupNotes,
+        "handoverPhoto": handoverPhoto,
+        "deliveryProofPhoto": deliveryProofPhoto,
+        "deliveryProofNote": deliveryProofNote,
+        "deliveryProofRecipient": deliveryProofRecipient,
+        "deliveryProofAt": deliveryProofAt?.toIso8601String(),
+        "deliveryProofLocation": deliveryProofLocation?.toJson(),
+        "shopDeliveryConfirmStatus": shopDeliveryConfirmStatus,
+        "shopDeliveryConfirmNote": shopDeliveryConfirmNote,
+        "shopDeliveryConfirmedAt": shopDeliveryConfirmedAt?.toIso8601String(),
+        "shopDeliveryRejectReason": shopDeliveryRejectReason,
+        "shopDeliveryRejectedAt": shopDeliveryRejectedAt?.toIso8601String(),
+        "deliveryIssueStatus": deliveryIssueStatus,
+        "deliveryIssueNote": deliveryIssueNote,
+        "customerDisputeStatus": customerDisputeStatus,
+        "customerDisputeNote": customerDisputeNote,
+        "customerDisputeAt": customerDisputeAt?.toIso8601String(),
+        "customerDisputeResolvedAt":
+            customerDisputeResolvedAt?.toIso8601String(),
+        "customerDisputeResolution": customerDisputeResolution,
       };
+}
+
+class PickupCheckinLocation {
+  final double latitude;
+  final double longitude;
+
+  PickupCheckinLocation({required this.latitude, required this.longitude});
+
+  factory PickupCheckinLocation.fromJson(Map<String, dynamic> json) =>
+      PickupCheckinLocation(
+        latitude: (json["latitude"] as num?)?.toDouble() ?? 0,
+        longitude: (json["longitude"] as num?)?.toDouble() ?? 0,
+      );
+
+  Map<String, dynamic> toJson() => {
+        "latitude": latitude,
+        "longitude": longitude,
+      };
+}
+
+class DeliveryProofLocation {
+  final double latitude;
+  final double longitude;
+
+  DeliveryProofLocation({required this.latitude, required this.longitude});
+
+  factory DeliveryProofLocation.fromJson(Map<String, dynamic> json) =>
+      DeliveryProofLocation(
+        latitude: (json["latitude"] as num?)?.toDouble() ?? 0,
+        longitude: (json["longitude"] as num?)?.toDouble() ?? 0,
+      );
+
+  Map<String, dynamic> toJson() => {
+        "latitude": latitude,
+        "longitude": longitude,
+      };
+}
+
+DateTime? _parseDate(dynamic value) {
+  if (value == null) return null;
+  if (value is DateTime) return value;
+  if (value is String && value.isNotEmpty) {
+    try {
+      return DateTime.parse(value);
+    } catch (_) {}
+  }
+  if (value is int) {
+    return DateTime.fromMillisecondsSinceEpoch(value);
+  }
+  return null;
 }
 
 class OrderItem {

@@ -12,6 +12,13 @@ import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+const Set<String> _cancellableStatuses = {
+  'Pending',
+  'Preparing',
+  'ReadyForPickup',
+  'WaitingShipper',
+};
+
 class ClientOrderTile extends StatefulWidget {
   const ClientOrderTile({
     super.key,
@@ -31,30 +38,58 @@ class ClientOrderTile extends StatefulWidget {
 }
 
 class _ClientOrderTileState extends State<ClientOrderTile> {
+  bool _isConfirmingReceipt = false;
+
   String _getStatusText(String status) {
-    switch (status) {
-      case 'Pending':
+    final normalized = status.toLowerCase();
+    switch (normalized) {
+      case 'pending':
+      case 'waitingpayment':
         return 'Chờ xử lý';
-      case 'Preparing':
+      case 'preparing':
+      case 'preparingorder':
+      case 'processing':
         return 'Đang chuẩn bị';
-      case 'Delivered':
+      case 'readyforpickup':
+      case 'waitingshipper':
+        return 'Sẵn sàng cho tài xế';
+      case 'pickedup':
+        return 'Tài xế đã nhận';
+      case 'delivering':
+        return 'Đang giao';
+      case 'delivered':
         return 'Đã giao';
-      case 'Cancelled':
+      case 'completed':
+        return 'Hoàn tất';
+      case 'cancelled':
         return 'Đã hủy';
+      case 'refunded':
+        return 'Đã hoàn tiền';
       default:
         return status;
     }
   }
 
   Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Pending':
+    final normalized = status.toLowerCase();
+    switch (normalized) {
+      case 'pending':
+      case 'waitingpayment':
         return Colors.orange;
-      case 'Preparing':
+      case 'preparing':
+      case 'preparingorder':
+      case 'processing':
         return Colors.blue;
-      case 'Delivered':
+      case 'readyforpickup':
+      case 'waitingshipper':
+      case 'pickedup':
+      case 'delivering':
+        return kSecondary;
+      case 'delivered':
+      case 'completed':
         return Colors.green;
-      case 'Cancelled':
+      case 'cancelled':
+      case 'refunded':
         return Colors.red;
       default:
         return kGray;
@@ -78,6 +113,7 @@ class _ClientOrderTileState extends State<ClientOrderTile> {
   }
 
   Future<void> _confirmReceived(BuildContext context) async {
+    if (_isConfirmingReceipt || widget.fullOrder == null) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -119,6 +155,7 @@ class _ClientOrderTileState extends State<ClientOrderTile> {
     );
 
     if (confirmed == true) {
+      setState(() => _isConfirmingReceipt = true);
       try {
         final box = GetStorage();
         final token = box.read('token');
@@ -133,9 +170,11 @@ class _ClientOrderTileState extends State<ClientOrderTile> {
         );
 
         if (response.statusCode == 200) {
+          final respBody = jsonDecode(response.body);
           Get.snackbar(
             'Thành công',
-            'Đã xác nhận nhận hàng và hoàn tất thanh toán',
+            respBody['message'] ??
+                'Đã xác nhận nhận hàng và hoàn tất thanh toán',
             backgroundColor: kPrimary,
             colorText: kWhite,
             icon: const Icon(Icons.check_circle, color: kWhite),
@@ -158,6 +197,7 @@ class _ClientOrderTileState extends State<ClientOrderTile> {
           colorText: kWhite,
         );
       }
+      setState(() => _isConfirmingReceipt = false);
     }
   }
 
@@ -289,15 +329,14 @@ class _ClientOrderTileState extends State<ClientOrderTile> {
         final box = GetStorage();
         final token = box.read('token');
 
-        final response = await http.put(
-          Uri.parse('$appBaseUrl/api/orders/${widget.fullOrder!.id}'),
+        final response = await http.post(
+          Uri.parse('$appBaseUrl/api/orders/${widget.fullOrder!.id}/cancel'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
           },
           body: jsonEncode({
-            'orderStatus': 'Cancelled',
-            'cancellationReason': reasonController.text.trim(),
+            'reason': reasonController.text.trim(),
           }),
         );
 
@@ -334,11 +373,17 @@ class _ClientOrderTileState extends State<ClientOrderTile> {
     final orderStatus = widget.fullOrder?.orderStatus ?? 'Pending';
     final statusColor = _getStatusColor(orderStatus);
     final statusText = _getStatusText(orderStatus);
+    final canCancel =
+        widget.fullOrder != null && _cancellableStatuses.contains(orderStatus);
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         if (widget.fullOrder != null) {
-          Get.to(() => UserOrderDetailPage(order: widget.fullOrder!));
+          final result =
+              await Get.to(() => UserOrderDetailPage(order: widget.fullOrder!));
+          if (result == true && widget.onCancelled != null) {
+            widget.onCancelled!();
+          }
         }
       },
       child: Container(
@@ -515,8 +560,8 @@ class _ClientOrderTileState extends State<ClientOrderTile> {
               ],
             ),
 
-            // Nút hủy đơn hàng (chỉ hiện khi Pending)
-            if (orderStatus == 'Pending') ...[
+            // Nút hủy đơn hàng (hiển thị cho các trạng thái cho phép)
+            if (canCancel) ...[
               SizedBox(height: 10.h),
               SizedBox(
                 width: double.infinity,
@@ -536,16 +581,19 @@ class _ClientOrderTileState extends State<ClientOrderTile> {
               ),
             ],
 
-            // Nút xác nhận đã nhận hàng (chỉ hiện khi Delivered và chưa thanh toán)
-            if (orderStatus == 'Delivered' &&
-                widget.fullOrder?.paymentStatus == 'Pending') ...[
+            // Nút xác nhận đã nhận hàng (hiện ngay khi shipper đã nhận/giao)
+            if (_shouldShowConfirmButton()) ...[
               SizedBox(height: 10.h),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => _confirmReceived(context),
+                  onPressed: _isConfirmingReceipt
+                      ? null
+                      : () => _confirmReceived(context),
                   icon: Icon(Icons.check_circle_outline, size: 16.sp),
-                  label: const Text('Đã nhận hàng'),
+                  label: Text(
+                    _isConfirmingReceipt ? 'Đang xác nhận...' : 'Đã nhận hàng',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kPrimary,
                     foregroundColor: kWhite,
@@ -562,5 +610,32 @@ class _ClientOrderTileState extends State<ClientOrderTile> {
         ),
       ),
     );
+  }
+
+  bool _shouldShowConfirmButton() {
+    final order = widget.fullOrder;
+    if (order == null) return false;
+    if (order.orderStatus == 'Cancelled') return false;
+
+    final shopStatus = (order.shopDeliveryConfirmStatus ?? '').toLowerCase();
+    if (shopStatus == 'confirmed') return false;
+
+    if (order.paymentMethod == 'COD' && order.paymentStatus == 'Completed') {
+      return false;
+    }
+
+    final orderPhase = order.orderStatus;
+    final logisticPhase = (order.logisticStatus ?? '').toLowerCase();
+    final bool isDeliveredPhase =
+        orderPhase == 'Delivered' || logisticPhase == 'delivered';
+    if (isDeliveredPhase) {
+      return true;
+    }
+
+    final bool isDriverOnRoute = orderPhase == 'Delivering' ||
+        orderPhase == 'PickedUp' ||
+        logisticPhase == 'delivering' ||
+        logisticPhase == 'pickedup';
+    return isDriverOnRoute;
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/back_ground_container.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
@@ -19,6 +21,9 @@ class Addresses extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final double buttonBottomOffset =
+        math.max(mediaQuery.viewPadding.bottom, 24.h) + 10.h;
     final hookResult = useFetchAddresses();
 
     final List<AddressResponse> addresses = hookResult.data ?? [];
@@ -36,7 +41,7 @@ class Addresses extends HookWidget {
           ),
         ),
         title: ReusableText(
-          text: "Địa chỉ",
+          text: 'shipping_address'.tr,
           style: appStyle(18, kLightWhite, FontWeight.w600),
         ),
       ),
@@ -58,12 +63,21 @@ class Addresses extends HookWidget {
             Align(
               alignment: AlignmentDirectional.bottomCenter,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(12.w, 0, 12.w, 30.h),
+                padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, buttonBottomOffset),
                 child: CustomButton(
-                  onTap: () {
-                    Get.to(() => const ShippingAddress());
+                  onTap: () async {
+                    final result = await Get.to(() => ShippingAddress(
+                          onAddressSet: hookResult.refetch,
+                          shouldPopOnSave: true,
+                        ));
+                    if (result == true && hookResult.refetch != null) {
+                      hookResult.refetch!();
+                    }
                   },
-                  text: "Thêm địa chỉ",
+                  text: 'add_address_button'.tr,
+                  btnHeight: 56.h,
+                  btnWidth: double.infinity,
+                  radius: 14.r,
                 ),
               ),
             )

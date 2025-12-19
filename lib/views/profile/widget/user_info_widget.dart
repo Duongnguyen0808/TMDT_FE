@@ -3,6 +3,7 @@ import 'package:appliances_flutter/models/login_response.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:appliances_flutter/common/app_style.dart';
 import 'package:appliances_flutter/common/reusable_text.dart';
@@ -37,7 +38,7 @@ class UserInfoWidget extends StatelessWidget {
                       width: 35.w,
                       child: CircleAvatar(
                         backgroundColor: kGrayLight,
-                        backgroundImage: NetworkImage(user!.profile),
+                        child: _ProfileAvatar(imageUrl: user?.profile),
                       ),
                     ),
                     SizedBox(
@@ -76,5 +77,34 @@ class UserInfoWidget extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({required this.imageUrl});
+
+  final String? imageUrl;
+
+  bool get _hasValidUrl {
+    if (imageUrl == null || imageUrl!.isEmpty) return false;
+    final uri = Uri.tryParse(imageUrl!);
+    return uri != null && uri.hasScheme && uri.hasAuthority;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasValidUrl) {
+      return ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: imageUrl!,
+          fit: BoxFit.cover,
+          width: 35.w,
+          height: 35.w,
+          errorWidget: (_, __, ___) => const Icon(Icons.person, color: kGray),
+          placeholder: (_, __) => const SizedBox.shrink(),
+        ),
+      );
+    }
+    return const Icon(Icons.person, color: kGray);
   }
 }

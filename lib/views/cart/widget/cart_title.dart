@@ -156,6 +156,17 @@ class CartTile extends StatelessWidget {
                       /// Tăng
                       GestureDetector(
                         onTap: () {
+                          final int? stock = cart.productId.stock;
+                          if (stock != null && cart.quantity >= stock) {
+                            Get.snackbar(
+                              'Vượt quá tồn kho',
+                              'Chỉ còn $stock sản phẩm có sẵn',
+                              colorText: kLightWhite,
+                              backgroundColor: kRed,
+                              icon: const Icon(Icons.error_outline),
+                            );
+                            return;
+                          }
                           final double unitPrice = cart.quantity > 0
                               ? (cart.totalPrice / cart.quantity)
                               : cart.totalPrice;

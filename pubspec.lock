@@ -321,6 +321,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.3.0"
+  firebase_messaging:
+    dependency: "direct main"
+    description:
+      name: firebase_messaging
+      sha256: "22086f857d2340f5d973776cfd542d3fb30cf98e1c643c3aa4a7520bb12745bb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "16.0.4"
+  firebase_messaging_platform_interface:
+    dependency: transitive
+    description:
+      name: firebase_messaging_platform_interface
+      sha256: a59920cbf2eb7c83d34a5f354331210ffec116b216dc72d864d8b8eb983ca398
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.7.4"
+  firebase_messaging_web:
+    dependency: transitive
+    description:
+      name: firebase_messaging_web
+      sha256: "1183e40e6fd2a279a628951cc3b639fcf5ffe7589902632db645011eb70ebefb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.1.0"
   fixnum:
     dependency: transitive
     description:
@@ -670,7 +694,7 @@ packages:
     source: hosted
     version: "4.3.0"
   intl:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: intl
       sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
@@ -681,10 +705,10 @@ packages:
     dependency: transitive
     description:
       name: js
-      sha256: "53385261521cc4a0c4658fd0ad07a7d14591cf8fc33abbceae306ddb974888dc"
+      sha256: f2c445dce49627136094980615a031419f7f3eb393237e4ecd97ac15dea343f3
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.2"
+    version: "0.6.7"
   json_annotation:
     dependency: transitive
     description:
@@ -733,6 +757,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.1"
+  logging:
+    dependency: transitive
+    description:
+      name: logging
+      sha256: c8245ada5f1717ed44271ed1c26b8ce85ca3228fd2ffdb75468ab01979309d61
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.0"
   lottie:
     dependency: "direct main"
     description:
@@ -1010,6 +1042,22 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  socket_io_client:
+    dependency: "direct main"
+    description:
+      name: socket_io_client
+      sha256: ede469f3e4c55e8528b4e023bdedbc20832e8811ab9b61679d1ba3ed5f01f23b
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.3+1"
+  socket_io_common:
+    dependency: transitive
+    description:
+      name: socket_io_common
+      sha256: "2ab92f8ff3ebbd4b353bf4a98bee45cc157e3255464b2f90f66e09c4472047eb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.3"
   source_span:
     dependency: transitive
     description:
@@ -1146,6 +1194,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.7.1"
+  translator:
+    dependency: "direct main"
+    description:
+      name: translator
+      sha256: fb28ada8b29931f5142907bac62dda375b14a60a57ec72ed37b78e3e97a7047b
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4+1"
   turf:
     dependency: transitive
     description:
@@ -1235,12 +1291,11 @@ packages:
     source: hosted
     version: "4.1.0"
   vietmap_flutter_gl_web:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: vietmap_flutter_gl_web
-      sha256: bbd7cd1cadb5a09fdaef46f2d500ee1684973ee69226450b6dfc9b8f0d53a359
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/vietmap_flutter_gl_web"
+      relative: true
+    source: path
     version: "0.0.1"
   vietmap_flutter_plugin:
     dependency: "direct main"

@@ -28,6 +28,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
       TextEditingController();
 
   final FocusNode _passwordFocusNode = FocusNode();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -67,60 +68,77 @@ class _RegistrationPageState extends State<RegistrationPage> {
               Lottie.asset("assets/anime/delivery.json"),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    EmailTextField(
-                      hintText: "Tên đăng nhập",
-                      keyboardType: TextInputType.text,
-                      prefixIcon: const Icon(
-                        CupertinoIcons.profile_circled,
-                        size: 22,
-                        color: kGrayLight,
-                      ),
-                      controller: _userController,
-                    ),
-                    SizedBox(
-                      height: 25.h,
-                    ),
-                    EmailTextField(
-                      hintText: "Email",
-                      prefixIcon: const Icon(
-                        CupertinoIcons.mail,
-                        size: 22,
-                        color: kGrayLight,
-                      ),
-                      controller: _emailController,
-                    ),
-                    SizedBox(
-                      height: 25.h,
-                    ),
-                    PasswordTextField(
-                      controller: _passwordController,
-                    ),
-                    SizedBox(
-                      height: 30.h,
-                    ),
-                    CustomButton(
-                      text: "Đăng ký",
-                      onTap: () {
-                        if (_emailController.text.isNotEmpty &&
-                            _userController.text.isNotEmpty &&
-                            _passwordController.text.length >= 8) {
-                          RegistrationModel model = RegistrationModel(
-                              username: _userController.text,
-                              email: _emailController.text,
-                              password: _passwordController.text);
+                child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        EmailTextField(
+                          hintText: "Tên đăng nhập",
+                          keyboardType: TextInputType.text,
+                          prefixIcon: const Icon(
+                            CupertinoIcons.profile_circled,
+                            size: 22,
+                            color: kGrayLight,
+                          ),
+                          controller: _userController,
+                          validator: (value) {
+                            final v = value?.trim() ?? '';
+                            if (v.isEmpty) return "Vui lòng nhập tên đăng nhập";
+                            if (v.length < 3)
+                              return "Tên đăng nhập tối thiểu 3 ký tự";
+                            return null;
+                          },
+                        ),
+                        SizedBox(
+                          height: 25.h,
+                        ),
+                        EmailTextField(
+                          hintText: "Email",
+                          isEmail: true,
+                          prefixIcon: const Icon(
+                            CupertinoIcons.mail,
+                            size: 22,
+                            color: kGrayLight,
+                          ),
+                          controller: _emailController,
+                        ),
+                        SizedBox(
+                          height: 25.h,
+                        ),
+                        PasswordTextField(
+                          controller: _passwordController,
+                          focusNode: _passwordFocusNode,
+                        ),
+                        SizedBox(
+                          height: 30.h,
+                        ),
+                        Obx(() => CustomButton(
+                              text: "Đăng ký",
+                              onTap: controller.isLoading
+                                  ? null
+                                  : () {
+                                      final isValid =
+                                          _formKey.currentState?.validate() ??
+                                              false;
+                                      if (!isValid) return;
 
-                          String data = registrationModelToJson(model);
+                                      final model = RegistrationModel(
+                                          username: _userController.text.trim(),
+                                          email: _emailController.text.trim(),
+                                          password: _passwordController.text);
 
-                          controller.registrationFunction(data);
-                        }
-                      },
-                      btnHeight: 35.h,
-                      btnWidth: width,
-                    ),
-                  ],
-                ),
+                                      final data =
+                                          registrationModelToJson(model);
+                                      controller.registrationFunction(data);
+                                    },
+                              btnHeight: 35.h,
+                              btnWidth: width,
+                              btnColor: controller.isLoading
+                                  ? kGray.withOpacity(.6)
+                                  : kPrimary,
+                            )),
+                      ],
+                    )),
               )
             ],
           ),
